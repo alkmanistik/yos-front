@@ -1,5 +1,5 @@
 import type {UserAdminResponse, UserResponse, UserShortResponse, UserUpdateRequest} from "../types/user.ts";
-import api from "./index.ts";
+import api from "./indexApi.ts";
 import type {Status} from "../types/status.ts";
 import type {PaginationParams} from "../types/pagination.ts";
 import type {WishShortResponse} from "../types/wish.ts";

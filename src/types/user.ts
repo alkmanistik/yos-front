@@ -28,17 +28,6 @@ export interface UserRecoverRequest {
     email: string;
 }
 
-export interface UserLoginRequest {
-    email: string;
-    password: string;
-}
-
-export interface UserRegisterRequest {
-    username: string;
-    password: string;
-    email: string;
-}
-
 export interface UserUpdateRequest {
     username?: string | null;
     password?: string | null;
