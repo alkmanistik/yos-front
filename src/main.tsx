@@ -8,9 +8,9 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
             <Route path="/" element={null} />
             <Route path="/home" element={null} />
-            <Route path="/auth">
-                <Route path="login" element={<AuthPage />} />
-                <Route path="register" element={<AuthPage />} />
+            <Route path="/auth" element={<AuthPage />}>
+                <Route path="login" />
+                <Route path="register" />
             </Route>
             <Route path="/advice" element={null} />
             <Route path="/wish" element={null} />
