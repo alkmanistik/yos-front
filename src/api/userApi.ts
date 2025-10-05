@@ -4,6 +4,7 @@ import type {Status} from "../types/status.ts";
 import type {PaginationParams} from "../types/pagination.ts";
 import type {WishShortResponse} from "../types/wish.ts";
 import type {AdviceShortResponse} from "../types/advice.ts";
+import type {ImageShortResponse} from "../types/image.ts";
 
 export const userApi = {
     async getUser(id: string): Promise<UserResponse> {
@@ -13,6 +14,11 @@ export const userApi = {
 
     async getCurrentUser(): Promise<UserAdminResponse> {
         const { data } = await api.get('/user/');
+        return data;
+    },
+
+    async getUserImages(id: string): Promise<ImageShortResponse[]> {
+        const { data } = await api.get<ImageShortResponse[]>(`/user/${id}/image`);
         return data;
     },
 

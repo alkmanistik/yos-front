@@ -3,6 +3,7 @@ import {Link} from "react-router";
 import {userApi} from "../../api/userApi.ts";
 import {useEffect, useState} from "react";
 import * as React from "react";
+import {useUserImages} from "../../hooks/useUserImages.ts";
 
 interface UserProfileProps {
     user: UserResponse;
@@ -15,6 +16,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, isOwnProfile }) => {
         folCount: 0,
     });
     const [loading, setLoading] = useState(true);
+    const {loading: loadingImages, getAvatarUrl } = useUserImages(user.id);
+    const avatarUrl = getAvatarUrl();
 
     useEffect(() => {
         const loadUserStats = async () => {
@@ -59,9 +62,19 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, isOwnProfile }) => {
             <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-4">
                     {/* Аватар */}
-                    <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                        {user.username.charAt(0).toUpperCase()}
-                    </div>
+                    {loadingImages ? (
+                        <div className="w-20 h-20 bg-gray-200 rounded-full animate-pulse"></div>
+                    ) : avatarUrl ? (
+                        <img
+                            src={"http://localhost:8080" + avatarUrl}
+                            alt={`${user.username}'s avatar`}
+                            className="w-20 h-20 rounded-full object-cover shadow-lg"
+                        />
+                    ) : (
+                        <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                            {user.username.charAt(0).toUpperCase()}
+                        </div>
+                    )}
 
                     {/* Информация */}
                     <div>

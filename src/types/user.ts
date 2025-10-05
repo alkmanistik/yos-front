@@ -32,4 +32,7 @@ export interface UserUpdateRequest {
     username?: string | null;
     password?: string | null;
     name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    informationForWish?: string | null;
 }

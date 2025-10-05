@@ -21,7 +21,7 @@ const TopBar = () => {
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
                     <div className="flex-shrink-0">
-                        <Link to="/home" className="text-xl font-bold text-blue-600">
+                        <Link to="/" className="text-xl font-bold text-blue-600">
                             Yos
                         </Link>
                     </div>
@@ -46,7 +46,6 @@ const TopBar = () => {
                     {/* User menu */}
                     <div className="flex items-center space-x-4">
                         {user ? (
-                            // Если пользователь авторизован
                             <div className="flex items-center space-x-4">
                                 {/* Уведомления */}
                                 <button
@@ -61,7 +60,6 @@ const TopBar = () => {
                                 <UserDropdown />
                             </div>
                         ) : (
-                            // Если пользователь не авторизован
                             <div className="flex items-center space-x-3">
                                 <Link
                                     to="/auth/login"

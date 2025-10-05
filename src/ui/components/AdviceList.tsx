@@ -5,11 +5,13 @@ import type {PaginationParams} from "../../types/pagination.ts";
 import {adviceApi} from "../../api/adviceApi.ts";
 import AdviceComponent from "./AdviceComponent.tsx";
 import AdviceShortComponent from "./AdviceShortComponent.tsx";
+import AdviceCreateModal from "./AdviceCreateModal.tsx";
 
 interface AdviceListProps {
     userId?: string;
     query?: string;
     showActions?: boolean;
+    showCreateButton?: boolean;
     initialPage?: number;
     pageSize?: number;
     onAdviceClick?: (adviceId: string) => void;
@@ -19,6 +21,7 @@ const AdviceList: React.FC<AdviceListProps> = ({
                                                    userId,
                                                    query,
                                                    showActions = true,
+                                                   showCreateButton = true,
                                                    initialPage = 0,
                                                    pageSize = 10,
                                                    onAdviceClick
@@ -27,7 +30,8 @@ const AdviceList: React.FC<AdviceListProps> = ({
     const [selectedAdviceId, setSelectedAdviceId] = useState<string | null>(null);
     const [selectedAdvice, setSelectedAdvice] = useState<AdviceResponse | null>(null);
     const [loading, setLoading] = useState(true);
-    const [loadingDetails, setLoadingDetails] = useState(false);
+    const [, setLoadingDetails] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
     const [pagination, setPagination] = useState({
         page: initialPage,
         size: pageSize,
@@ -90,6 +94,19 @@ const AdviceList: React.FC<AdviceListProps> = ({
         } finally {
             setLoadingDetails(false);
         }
+    };
+
+    const handleAddNew = () => {
+        setShowCreateModal(true);
+    };
+
+    const handleCreateSuccess = () => {
+        setShowCreateModal(false);
+        loadAdvices(0, false);
+    };
+
+    const handleCreateCancel = () => {
+        setShowCreateModal(false);
     };
 
     useEffect(() => {
@@ -155,30 +172,45 @@ const AdviceList: React.FC<AdviceListProps> = ({
         );
     }
 
-    if (selectedAdviceId && loadingDetails) {
-        return (
-            <div className="flex justify-center items-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-600">Загрузка...</span>
-            </div>
-        );
-    }
-
     return (
         <div className="space-y-4">
-            {/* Заголовок и кнопка обновления */}
+            {/* Хедер с кнопкой добавления */}
             <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">
-                    Советы {pagination.total > 0 && `(${pagination.total})`}
-                </h3>
-                <button
-                    onClick={handleRefresh}
-                    disabled={loading}
-                    className="text-blue-600 hover:text-blue-800 disabled:text-gray-400 p-2 rounded-lg hover:bg-blue-50 transition-colors"
-                    title="Обновить"
-                >
-                    🔄
-                </button>
+                <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                        Советы {pagination.total > 0 && `(${pagination.total})`}
+                    </h3>
+                    {query && (
+                        <p className="text-sm text-gray-500 mt-1">
+                            Поиск: "{query}"
+                        </p>
+                    )}
+                </div>
+
+                <div className="flex items-center space-x-3">
+                    {/* Кнопка обновления */}
+                    <button
+                        onClick={handleRefresh}
+                        disabled={loading}
+                        className="text-blue-600 hover:text-blue-800 disabled:text-gray-400 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                        title="Обновить список"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+
+                    {/* Кнопка добавления нового совета */}
+                    {showCreateButton && (
+                        <button
+                            onClick={handleAddNew}
+                            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 py-2.5 rounded-lg font-medium transition-all duration-200 hover:shadow-lg flex items-center space-x-2 group"
+                        >
+                            <span className="text-lg font-bold group-hover:scale-110 transition-transform">+</span>
+                            <span>Новый совет</span>
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Сообщение об ошибке */}
@@ -187,7 +219,7 @@ const AdviceList: React.FC<AdviceListProps> = ({
                     <p className="text-red-700">{error}</p>
                     <button
                         onClick={handleRefresh}
-                        className="mt-2 text-red-600 hover:text-red-800 text-sm"
+                        className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium"
                     >
                         Попробовать снова
                     </button>
@@ -231,7 +263,10 @@ const AdviceList: React.FC<AdviceListProps> = ({
 
             {/* Сообщение если нет советов */}
             {!loading && advices.length === 0 && !error && (
-                <div className="bg-gray-50 rounded-lg p-8 text-center">
+                <div className="bg-gray-50 rounded-xl p-8 text-center">
+                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span className="text-2xl">💡</span>
+                    </div>
                     <p className="text-gray-500 text-lg mb-2">
                         {query
                             ? 'По вашему запросу советов не найдено'
@@ -240,12 +275,24 @@ const AdviceList: React.FC<AdviceListProps> = ({
                                 : 'Советов пока нет'
                         }
                     </p>
-                    {!userId && (
-                        <p className="text-gray-400 text-sm">
-                            Будьте первым, кто поделится советом!
-                        </p>
+                    {!userId && showCreateButton && (
+                        <button
+                            onClick={handleAddNew}
+                            className="mt-4 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center space-x-2"
+                        >
+                            <span>+</span>
+                            <span>Создать первый совет</span>
+                        </button>
                     )}
                 </div>
+            )}
+
+            {/* Модалка создания совета */}
+            {showCreateModal && (
+                <AdviceCreateModal
+                    onSuccess={handleCreateSuccess}
+                    onCancel={handleCreateCancel}
+                />
             )}
         </div>
     );

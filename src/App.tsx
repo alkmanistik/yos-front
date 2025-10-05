@@ -5,6 +5,7 @@ import HomePage from "./ui/pages/HomePage.tsx";
 import AdvicePage from "./ui/pages/AdvicePage.tsx";
 import WishPage from "./ui/pages/WishPage.tsx";
 import UserPage from "./ui/pages/UserPage.tsx";
+import UserUpdateModal from "./ui/components/UserUpdateModal.tsx";
 
 export const App = () => {
     return (
@@ -17,10 +18,11 @@ export const App = () => {
                 <Route index element={<HomePage/>}/>
                 <Route path="advice" element={<AdvicePage/>}/>
                 <Route path="wish" element={<WishPage/>}/>
-                <Route path="user" element={<UserPage/>}>
-                    <Route path=":id"/>
+                <Route path="user">
+                    <Route index element={<UserPage/>} />
+                    <Route path=":id" element={<UserPage/>} />
                     {/*<Route path="search" element={<UserSearchPage/>}/>*/}
-                    {/*<Route path="update" element={<UserUpdatePage/>}/>*/}
+                    <Route path="update" element={<UserUpdateModal/>}/>
                 </Route>
             </Route>
 

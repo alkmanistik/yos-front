@@ -11,7 +11,6 @@ interface AdviceComponentProps {
 
 const AdviceComponent: React.FC<AdviceComponentProps> = ({
                                                              advice,
-                                                             onBack,
                                                              onEdit,
                                                              onDelete
                                                          }) => {
@@ -25,16 +24,6 @@ const AdviceComponent: React.FC<AdviceComponentProps> = ({
 
     return (
         <div className="bg-white border border-gray-200 rounded-lg p-6">
-            {/* Кнопка назад */}
-            {onBack && (
-                <button
-                    onClick={onBack}
-                    className="mb-4 flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium"
-                >
-                    ← Назад к списку
-                </button>
-            )}
-
             <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                     <h2 className="text-2xl font-bold text-gray-900 mb-3">{advice.title}</h2>

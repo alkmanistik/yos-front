@@ -1,12 +1,17 @@
 import {useEffect, useRef, useState} from "react";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import {useNavigate} from "react-router";
+import {useUserImages} from "../../hooks/useUserImages.ts";
 
 const UserDropdown = () => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const {loading: loadingImages, getAvatarUrl } = useUserImages(user?.id);
+
+    const avatarUrl = getAvatarUrl();
+
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -52,9 +57,19 @@ const UserDropdown = () => {
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center space-x-3 bg-gray-50 hover:bg-gray-100 rounded-lg px-3 py-2 transition-colors border border-gray-200"
             >
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm">
-                    {user?.username?.charAt(0).toUpperCase() || 'U'}
-                </div>
+                {loadingImages ? (
+                    <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                ) : avatarUrl ? (
+                    <img
+                        src={"http://localhost:8080" + avatarUrl}
+                        alt={`${user?.username}'s avatar`}
+                        className="w-8 h-8 rounded-full object-cover shadow-sm"
+                    />
+                ) : (
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm">
+                        {user?.username?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                )}
                 <svg
                     className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                     fill="none"
