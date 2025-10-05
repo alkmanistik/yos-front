@@ -5,142 +5,107 @@ import type {PaginationParams} from "../types/pagination.ts";
 import type {WishShortResponse} from "../types/wish.ts";
 import type {AdviceShortResponse} from "../types/advice.ts";
 
-export const getUser = async (id: string): Promise<UserResponse> => {
-    const { data } = await api.get(`/user/${id}`);
-    return data;
-};
+export const userApi = {
+    async getUser(id: string): Promise<UserResponse> {
+        const { data } = await api.get(`/user/${id}`);
+        return data;
+    },
 
-export const getUserStatus = async (id: string): Promise<Status> => {
-    const { data } = await api.get(`/user/${id}/status`);
-    return data;
-};
+    async getCurrentUser(): Promise<UserAdminResponse> {
+        const { data } = await api.get('/user/');
+        return data;
+    },
 
-export const getSubs = async (
-    id: string,
-    params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }
-): Promise<UserShortResponse[]> => {
-    const { data } = await api.get(`/user/${id}/sub`, { params });
-    return data;
-};
+    async updateUser(updateData: UserUpdateRequest, avatarFile: File | null = null): Promise<UserResponse> {
+        const formData = new FormData();
+        if (updateData) formData.append('userUpdateRequest', JSON.stringify(updateData));
+        if (avatarFile) formData.append('avatar', avatarFile);
+        const { data } = await api.patch('/user/', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return data;
+    },
 
-export const getSubCount = async (id: string): Promise<number> => {
-    const { data } = await api.get(`/user/${id}/sub/count`);
-    return data;
-};
+    async deleteUser(): Promise<void> {
+        await api.delete('/user/');
+        localStorage.removeItem('token');
+    },
 
-export const getFollowers = async (
-    id: string,
-    params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }
-): Promise<UserShortResponse[]> => {
-    const { data } = await api.get(`/user/${id}/fol`, { params });
-    return data;
-};
+    async getUserStatus(id: string): Promise<Status> {
+        const { data } = await api.get(`/user/${id}/status`);
+        return data;
+    },
 
-export const getFolCount = async (id: string): Promise<number> => {
-    const { data } = await api.get(`/user/${id}/fol/count`);
-    return data;
-};
+    async getAdProfileStatus(id: string): Promise<Status> {
+        const { data } = await api.get(`/user/${id}/adProfile/status`);
+        return data;
+    },
 
-export const getWishlist = async (
-    id: string,
-    params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }
-): Promise<WishShortResponse[]> => {
-    const { data } = await api.get(`/user/${id}/wishlist`, { params });
-    return data;
-};
+    async getSubs(id: string, params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }): Promise<UserShortResponse[]> {
+        const { data } = await api.get(`/user/${id}/sub`, { params });
+        return data;
+    },
 
-export const getFulfilledWishlist = async (
-    id: string,
-    params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }
-): Promise<WishShortResponse[]> => {
-    const { data } = await api.get(`/user/${id}/wishlist/fulfilled`, { params });
-    return data;
-};
+    async getSubCount(id: string): Promise<number> {
+        const { data } = await api.get(`/user/${id}/sub/count`);
+        return data;
+    },
 
-export const getAdvice = async (
-    id: string,
-    params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }
-): Promise<AdviceShortResponse[]> => {
-    const { data } = await api.get(`/user/${id}/advice`, { params });
-    return data;
-};
+    async getFollowers(id: string, params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }): Promise<UserShortResponse[]> {
+        const { data } = await api.get(`/user/${id}/fol`, { params });
+        return data;
+    },
 
-export const getAdProfileStatus = async (id: string): Promise<Status> => {
-    const { data } = await api.get(`/user/${id}/adProfile/status`);
-    return data;
-};
+    async getFolCount(id: string): Promise<number> {
+        const { data } = await api.get(`/user/${id}/fol/count`);
+        return data;
+    },
 
-/*export const getAdProfile = async (id: string): Promise<AdProfileResponse> => {
-    const { data } = await api.get(`/user/${id}/adProfile`);
-    return data;
-};*/
+    async getWish(id: string, params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }): Promise<WishShortResponse[]> {
+        const { data } = await api.get(`/user/${id}/wish`, { params });
+        return data;
+    },
 
-export const searchUsers = async (
-    query: string,
-    params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }
-): Promise<UserShortResponse[]> => {
-    const { data } = await api.get(`/user/search`, { params: { query, ...params } });
-    return data;
-};
+    async getWishCount(id: string): Promise<number> {
+        const { data } = await api.get(`/user/${id}/wish/count`);
+        return data;
+    },
 
-export const getCurrentUser = async (): Promise<UserResponse> => {
-    const { data } = await api.get('/user/');
-    return data;
-};
+    async getFulfilledWishlist(id: string, params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }): Promise<WishShortResponse[]> {
+        const { data } = await api.get(`/user/${id}/wish/fulfilled`, { params });
+        return data;
+    },
 
-export const updateUser = async (
-    updateData: UserUpdateRequest,
-    avatarFile: File | null = null
-): Promise<UserResponse> => {
-    const formData = new FormData();
-    if (updateData) formData.append('userUpdateRequest', JSON.stringify(updateData));
-    if (avatarFile) formData.append('avatar', avatarFile);
-    const { data } = await api.patch('/user/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return data;
-};
+    async getAdvice(id: string, params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }): Promise<AdviceShortResponse[]> {
+        const { data } = await api.get(`/user/${id}/advice`, { params });
+        return data;
+    },
 
-export const deleteUser = async (): Promise<void> => {
-    await api.delete('/user/');
-    localStorage.removeItem('token');
-};
+    async getAdviceCount(id: string): Promise<number> {
+        const { data } = await api.get(`/user/${id}/advice/count`);
+        return data;
+    },
 
-export const addSub = async (targetId: string): Promise<void> => {
-    await api.post(`/user/${targetId}/sub/add`);
-};
+    async searchUsers(query: string, params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }): Promise<UserShortResponse[]> {
+        const { data } = await api.get(`/user/search`, { params: { query, ...params } });
+        return data;
+    },
 
-export const removeSub = async (targetId: string): Promise<void> => {
-    await api.post(`/user/${targetId}/sub/remove`);
-};
+    async addSub(targetId: string): Promise<void> {
+        await api.post(`/user/${targetId}/sub/add`);
+    },
 
-export const getSubStatus = async (targetId: string): Promise<Status> => {
-    const { data } = await api.get(`/user/${targetId}/sub/status`);
-    return data;
-};
+    async removeSub(targetId: string): Promise<void> {
+        await api.post(`/user/${targetId}/sub/remove`);
+    },
 
-/*export const addComplaint = async (
-    targetId: string,
-    complaintData: ComplaintRequest
-): Promise<unknown> => {
-    const { data } = await api.post(`/user/${targetId}/complaints/add`, complaintData);
-    return data;
-};
+    async getSubStatus(targetId: string): Promise<Status> {
+        const { data } = await api.get(`/user/${targetId}/sub/status`);
+        return data;
+    },
 
-export const getCheckedNotifications = async (): Promise<NotificationResponse[]> => {
-    const { data } = await api.get('/user/notification/check');
-    return data;
-};
-
-export const getUncheckedNotifications = async (): Promise<NotificationResponse[]> => {
-    const { data } = await api.get('/user/notification/uncheck');
-    return data;
-};*/
-
-export const getAllUsers = async (
-    query = '',
-    params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }
-): Promise<UserAdminResponse[]> => {
-    const { data } = await api.get('/admin/users', { params: { query, ...params } });
-    return data;
+    async getAllUsers(query = '', params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }): Promise<UserAdminResponse[]> {
+        const { data } = await api.get('/admin/users', { params: { query, ...params } });
+        return data;
+    }
 };

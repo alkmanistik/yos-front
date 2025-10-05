@@ -1,13 +1,14 @@
 import {useLocation, useNavigate} from "react-router";
 import {useForm} from "react-hook-form";
-import type {AuthFormData, UserLoginRequest, UserRegisterRequest} from "../types/auth.ts";
+import type {AuthFormData} from "../../types/auth.ts";
 import {useState} from "react";
-import {authApi} from "../api/authApi.ts";
 import axios from "axios";
+import {useAuth} from "../../contexts/AuthContext.tsx";
 
 const AuthPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { login, registration } = useAuth();
     const isRegister = location.pathname === '/auth/register';
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -25,28 +26,21 @@ const AuthPage = () => {
         setError(null);
 
         try {
-            let response;
-
             if (isRegister) {
-                const registerData: UserRegisterRequest = {
+                const registerData = {
                     username: data.username,
                     email: data.email,
                     password: data.password
                 };
-                response = await authApi.register(registerData);
+                await registration(registerData);
             } else {
-                const loginData: UserLoginRequest = {
+                const loginData = {
                     email: data.email,
                     password: data.password
                 };
-                response = await authApi.login(loginData);
+                await login(loginData);
             }
-
-            // Сохраняем токен
-            localStorage.setItem('token', response.token);
-
-            // Перенаправляем на домашнюю страницу
-            navigate('/home');
+            navigate('/');
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
                 const errorMessage = err.response?.data?.message || err.message || 'An error occurred';
