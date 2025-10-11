@@ -15,24 +15,8 @@ export const userApi = {
         const { data } = await api.get('/user/');
         return data;
     },
-    async updateUser(
-        updateData: UserUpdateRequest,
-        avatarFile: File | null = null,
-        deleteAvatar: boolean = false
-    ): Promise<UserResponse> {
-        const formData = new FormData();
-        if (updateData) {
-            formData.append('userUpdateRequest', JSON.stringify(updateData));
-        }
-        if (avatarFile) {
-            formData.append('avatar', avatarFile);
-        }
-        if (deleteAvatar) {
-            formData.append('avatarAction', 'delete');
-        }
-        const { data } = await api.patch('/user/', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
+    async updateUser(updateData: UserUpdateRequest): Promise<UserResponse> {
+        const { data } = await api.patch<UserResponse>('/user/', updateData);
         return data;
     },
 

@@ -53,7 +53,7 @@ const UserUpdateModal = () => {
 
                 const mainImage = images.at(0);
                 if (mainImage) {
-                    setAvatarPreview(`http://localhost:8080/image/${mainImage.id}`);
+                    setAvatarPreview(imageApi.getImageUrl(mainImage.id));
                 }
             } catch (err) {
                 console.error('Error loading user images:', err);
@@ -108,7 +108,7 @@ const UserUpdateModal = () => {
 
         const mainImage = userImages.at(0);
         if (mainImage) {
-            setAvatarPreview(`http://localhost:8080/image/${mainImage.id}`);
+            setAvatarPreview(imageApi.getImageUrl(mainImage.id));
         } else {
             setAvatarPreview(null);
         }
@@ -126,6 +126,28 @@ const UserUpdateModal = () => {
             return 'hasImage';
         }
         return 'placeholder';
+    };
+
+    const handleAvatarOperations = async () => {
+        if (!user) return;
+
+        try {
+            // Удаление аватара
+            if (avatarAction === 'delete') {
+                const mainImage = userImages.find(img => img.main) || userImages[0];
+                if (mainImage) {
+                    await imageApi.deleteImage(mainImage.id);
+                }
+            }
+
+            // Загрузка нового аватара
+            if (avatarAction === 'update' && avatarFile) {
+                await imageApi.uploadUserAvatar(user.id, avatarFile);
+            }
+        } catch (err) {
+            console.error('Error managing avatar:', err);
+            throw err;
+        }
     };
 
     const onSubmit = async (data: UserUpdateFormData) => {
@@ -152,14 +174,19 @@ const UserUpdateModal = () => {
                 return;
             }
 
-            await userApi.updateUser(
-                updateData,
-                avatarAction === 'update' ? avatarFile : null,
-                avatarAction === 'delete'
-            );
+            // Обновляем данные пользователя
+            if (hasDataChanges) {
+                await userApi.updateUser(updateData);
+            }
+
+            // Управляем аватаром через imageApi
+            if (hasAvatarChanges) {
+                await handleAvatarOperations();
+            }
 
             await checkAuth();
 
+            // Уведомляем об обновлении аватара
             if (avatarAction !== 'keep') {
                 const { notifyAvatarUpdate } = await import('../utils/UserDropdown.tsx');
                 notifyAvatarUpdate();
