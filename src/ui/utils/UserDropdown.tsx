@@ -3,15 +3,32 @@ import {useAuth} from "../../contexts/AuthContext.tsx";
 import {useNavigate} from "react-router";
 import {useUserImages} from "../../hooks/useUserImages.ts";
 
+const avatarUpdateEvent = new EventTarget();
+
+export const notifyAvatarUpdate = () => {
+    avatarUpdateEvent.dispatchEvent(new Event('avatarUpdated'));
+};
+
 const UserDropdown = () => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-    const {loading: loadingImages, getAvatarUrl } = useUserImages(user?.id);
+    const { loading: loadingImages, getAvatarUrl, refreshImages } = useUserImages(user?.id);
 
     const avatarUrl = getAvatarUrl();
 
+    useEffect(() => {
+        const handleAvatarUpdate = () => {
+            refreshImages();
+        };
+
+        avatarUpdateEvent.addEventListener('avatarUpdated', handleAvatarUpdate);
+
+        return () => {
+            avatarUpdateEvent.removeEventListener('avatarUpdated', handleAvatarUpdate);
+        };
+    }, [refreshImages]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -64,6 +81,7 @@ const UserDropdown = () => {
                         src={"http://localhost:8080" + avatarUrl}
                         alt={`${user?.username}'s avatar`}
                         className="w-8 h-8 rounded-full object-cover shadow-sm"
+                        key={avatarUrl} // Добавляем key для принудительного обновления
                     />
                 ) : (
                     <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm">

@@ -5,6 +5,8 @@ import { userApi } from '../../api/userApi';
 import type { UserUpdateRequest } from '../../types/user';
 import {useNavigate} from "react-router";
 import type {ImageShortResponse} from "../../types/image.ts";
+import {AxiosError} from "axios";
+import {imageApi} from "../../api/imageApi.ts";
 
 interface UserUpdateFormData extends UserUpdateRequest {
     confirmPassword?: string;
@@ -20,6 +22,7 @@ const UserUpdateModal = () => {
     const [loadingImages, setLoadingImages] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [avatarAction, setAvatarAction] = useState<'keep' | 'update' | 'delete'>('keep');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const {
@@ -45,12 +48,12 @@ const UserUpdateModal = () => {
 
             try {
                 setLoadingImages(true);
-                const images = await userApi.getUserImages(user.id);
+                const images = await imageApi.getUserImages(user.id);
                 setUserImages(images);
 
                 const mainImage = images.at(0);
                 if (mainImage) {
-                    setAvatarPreview(`/image/${mainImage.id}`);
+                    setAvatarPreview(`http://localhost:8080/image/${mainImage.id}`);
                 }
             } catch (err) {
                 console.error('Error loading user images:', err);
@@ -78,6 +81,8 @@ const UserUpdateModal = () => {
             }
 
             setAvatarFile(file);
+            setAvatarAction('update');
+            setError(null);
 
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -89,16 +94,38 @@ const UserUpdateModal = () => {
 
     const handleRemoveAvatar = () => {
         setAvatarFile(null);
+        setAvatarAction('delete');
+        setAvatarPreview(null);
 
-        const mainImage = userImages.at(0);
-        if (mainImage) {
-            setAvatarPreview(`/image/${mainImage.id}`);
-        } else {
-            setAvatarPreview(null);
-        }
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
+    };
+
+    const handleCancelAvatarChange = () => {
+        setAvatarFile(null);
+        setAvatarAction('keep');
+
+        const mainImage = userImages.at(0);
+        if (mainImage) {
+            setAvatarPreview(`http://localhost:8080/image/${mainImage.id}`);
+        } else {
+            setAvatarPreview(null);
+        }
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const getAvatarDisplay = () => {
+        if (loadingImages) {
+            return 'loading';
+        }
+        if (avatarPreview) {
+            return 'hasImage';
+        }
+        return 'placeholder';
     };
 
     const onSubmit = async (data: UserUpdateFormData) => {
@@ -117,17 +144,35 @@ const UserUpdateModal = () => {
             if (data.informationForWish !== user.informationForWish) updateData.informationForWish = data.informationForWish;
             if (data.password) updateData.password = data.password;
 
-            if (Object.keys(updateData).length === 0 && !avatarFile) {
+            const hasDataChanges = Object.keys(updateData).length > 0;
+            const hasAvatarChanges = avatarAction !== 'keep';
+
+            if (!hasDataChanges && !hasAvatarChanges) {
                 navigate(-1);
                 return;
             }
 
-            await userApi.updateUser(updateData, avatarFile);
+            await userApi.updateUser(
+                updateData,
+                avatarAction === 'update' ? avatarFile : null,
+                avatarAction === 'delete'
+            );
+
             await checkAuth();
+
+            if (avatarAction !== 'keep') {
+                const { notifyAvatarUpdate } = await import('../utils/UserDropdown.tsx');
+                notifyAvatarUpdate();
+            }
+
             navigate(-1);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error updating user:', err);
-            setError(err.response?.data?.message || 'Не удалось обновить профиль');
+            if (err instanceof AxiosError) {
+                setError(err.response?.data?.message || 'Не удалось обновить профиль');
+            } else {
+                setError("Что-то пошло не так")
+            }
         } finally {
             setLoading(false);
         }
@@ -144,6 +189,8 @@ const UserUpdateModal = () => {
             </div>
         );
     }
+
+    const avatarDisplay = getAvatarDisplay();
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -169,13 +216,13 @@ const UserUpdateModal = () => {
                         <div className="flex flex-col items-center space-y-3">
                             {/* Превью аватара */}
                             <div className="relative">
-                                {loadingImages ? (
+                                {avatarDisplay === 'loading' ? (
                                     <div className="w-24 h-24 bg-gray-200 rounded-full animate-pulse flex items-center justify-center">
                                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                                     </div>
-                                ) : avatarPreview ? (
+                                ) : avatarDisplay === 'hasImage' && avatarPreview != null ? (
                                     <img
-                                        src={"http://localhost:8080"+ avatarPreview}
+                                        src={avatarPreview}
                                         alt="Avatar preview"
                                         className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
                                     />
@@ -185,22 +232,45 @@ const UserUpdateModal = () => {
                                     </div>
                                 )}
 
-                                {/* Кнопка удаления аватара */}
-                                {!loadingImages && avatarPreview && (
-                                    <button
-                                        type="button"
-                                        onClick={handleRemoveAvatar}
-                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
-                                    >
-                                        ×
-                                    </button>
+                                {/* Кнопки управления аватаром */}
+                                {avatarDisplay !== 'loading' && (avatarAction !== 'keep' || avatarDisplay === 'hasImage') && (
+                                    <div className="absolute -top-2 -right-2 flex space-x-1">
+                                        {avatarAction !== 'keep' && (
+                                            <button
+                                                type="button"
+                                                onClick={handleCancelAvatarChange}
+                                                className="bg-gray-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-gray-600 transition-colors"
+                                                title="Отменить изменение"
+                                            >
+                                                ↶
+                                            </button>
+                                        )}
+                                        {(avatarDisplay === 'hasImage' || avatarAction === 'delete') && (
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveAvatar}
+                                                className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
+                                                title="Удалить аватар"
+                                            >
+                                                ×
+                                            </button>
+                                        )}
+                                    </div>
                                 )}
                             </div>
+
+                            {/* Статус аватара */}
+                            {avatarAction !== 'keep' && (
+                                <div className="text-xs font-medium px-3 py-1 rounded-full bg-blue-50 text-blue-700">
+                                    {avatarAction === 'delete' && 'Аватар будет удален'}
+                                    {avatarAction === 'update' && 'Будет загружен новый аватар'}
+                                </div>
+                            )}
 
                             {/* Кнопка загрузки */}
                             <label className="cursor-pointer">
                                 <span className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors inline-block">
-                                    Выбрать фото
+                                    {avatarDisplay === 'hasImage' ? 'Изменить фото' : 'Выбрать фото'}
                                 </span>
                                 <input
                                     ref={fileInputRef}
@@ -351,7 +421,7 @@ const UserUpdateModal = () => {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
                             >
                                 {showPassword ? '🙈' : '👁️'}
                             </button>
@@ -395,7 +465,7 @@ const UserUpdateModal = () => {
                             type="button"
                             onClick={handleClose}
                             disabled={loading}
-                            className="px-6 py-2.5 text-gray-600 hover:text-gray-800 font-medium disabled:opacity-50"
+                            className="px-6 py-2.5 text-gray-600 hover:text-gray-800 font-medium disabled:opacity-50 transition-colors"
                         >
                             Отмена
                         </button>

@@ -4,7 +4,6 @@ import type {Status} from "../types/status.ts";
 import type {PaginationParams} from "../types/pagination.ts";
 import type {WishShortResponse} from "../types/wish.ts";
 import type {AdviceShortResponse} from "../types/advice.ts";
-import type {ImageShortResponse} from "../types/image.ts";
 
 export const userApi = {
     async getUser(id: string): Promise<UserResponse> {
@@ -16,16 +15,21 @@ export const userApi = {
         const { data } = await api.get('/user/');
         return data;
     },
-
-    async getUserImages(id: string): Promise<ImageShortResponse[]> {
-        const { data } = await api.get<ImageShortResponse[]>(`/user/${id}/image`);
-        return data;
-    },
-
-    async updateUser(updateData: UserUpdateRequest, avatarFile: File | null = null): Promise<UserResponse> {
+    async updateUser(
+        updateData: UserUpdateRequest,
+        avatarFile: File | null = null,
+        deleteAvatar: boolean = false
+    ): Promise<UserResponse> {
         const formData = new FormData();
-        if (updateData) formData.append('userUpdateRequest', JSON.stringify(updateData));
-        if (avatarFile) formData.append('avatar', avatarFile);
+        if (updateData) {
+            formData.append('userUpdateRequest', JSON.stringify(updateData));
+        }
+        if (avatarFile) {
+            formData.append('avatar', avatarFile);
+        }
+        if (deleteAvatar) {
+            formData.append('avatarAction', 'delete');
+        }
         const { data } = await api.patch('/user/', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });

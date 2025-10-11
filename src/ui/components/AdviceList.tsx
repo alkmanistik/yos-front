@@ -6,6 +6,7 @@ import {adviceApi} from "../../api/adviceApi.ts";
 import AdviceComponent from "./AdviceComponent.tsx";
 import AdviceShortComponent from "./AdviceShortComponent.tsx";
 import AdviceCreateModal from "./AdviceCreateModal.tsx";
+import {userApi} from "../../api/userApi.ts";
 
 interface AdviceListProps {
     userId?: string;
@@ -54,7 +55,7 @@ const AdviceList: React.FC<AdviceListProps> = ({
             let response: AdviceShortResponse[];
 
             if (userId) {
-                response = await adviceApi.getMyAdvices(params);
+                response = await userApi.getAdvice(userId, params);
             } else if (query) {
                 response = await adviceApi.searchAdvices(query, params);
             } else {
@@ -201,7 +202,7 @@ const AdviceList: React.FC<AdviceListProps> = ({
                     </button>
 
                     {/* Кнопка добавления нового совета */}
-                    {showCreateButton && (
+                    {showCreateButton && showActions && (
                         <button
                             onClick={handleAddNew}
                             className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 py-2.5 rounded-lg font-medium transition-all duration-200 hover:shadow-lg flex items-center space-x-2 group"

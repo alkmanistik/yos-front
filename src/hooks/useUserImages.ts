@@ -1,41 +1,45 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import type {ImageShortResponse} from "../types/image.ts";
-import {userApi} from "../api/userApi.ts";
+import {imageApi} from "../api/imageApi.ts";
 
-export const useUserImages = (userId: string | undefined) => {
+export const useUserImages = (userId?: string) => {
     const [images, setImages] = useState<ImageShortResponse[]>([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
 
-    useEffect(() => {
-        const loadImages = async () => {
-            if (!userId) return;
+    const loadImages = useCallback(async () => {
+        if (!userId) return;
 
-            try {
-                setLoading(true);
-                setError(null);
-                const userImages = await userApi.getUserImages(userId);
-                setImages(userImages);
-            } catch (err) {
-                console.error('Error loading user images:', err);
-                setError('Не удалось загрузить изображения');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadImages();
+        try {
+            setLoading(true);
+            const userImages = await imageApi.getUserImages(userId);
+            setImages(userImages);
+        } catch (error) {
+            console.error('Error loading user images:', error);
+            setImages([]);
+        } finally {
+            setLoading(false);
+        }
     }, [userId]);
 
-    const getAvatarUrl = (): string | null => {
-        const mainImage = images.at(0)
+    // Принудительное обновление изображений
+    const refreshImages = useCallback(() => {
+        setLastUpdate(Date.now());
+    }, []);
+
+    useEffect(() => {
+        loadImages();
+    }, [loadImages, lastUpdate]);
+
+    const getAvatarUrl = useCallback((): string | null => {
+        const mainImage = images.find(img => img.main) || images[0];
         return mainImage ? `/image/${mainImage.id}` : null;
-    };
+    }, [images]);
 
     return {
         images,
         loading,
-        error,
-        getAvatarUrl
+        getAvatarUrl,
+        refreshImages // Добавляем функцию для принудительного обновления
     };
 };

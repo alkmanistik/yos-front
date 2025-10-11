@@ -3,17 +3,10 @@ import api from "./indexApi.ts";
 import type {Status} from "../types/status.ts";
 import type {UserShortResponse} from "../types/user.ts";
 import type {PaginationParams} from "../types/pagination.ts";
-import type {ImageShortResponse} from "../types/image.ts";
-import type {ComplaintRequest} from "../types/complaint.ts";
 
 export const adviceApi = {
     async getAdviceById(id: string): Promise<AdviceResponse> {
         const { data } = await api.get<AdviceResponse>(`/advice/${id}`);
-        return data;
-    },
-
-    async getAdviceImages(id: string): Promise<ImageShortResponse[]> {
-        const { data } = await api.get<ImageShortResponse[]>(`/advice/${id}/image`);
         return data;
     },
 
@@ -72,10 +65,6 @@ export const adviceApi = {
 
     async deleteAdvice(id: string): Promise<void> {
         await api.delete(`/advice/${id}`);
-    },
-
-    async addComplaint(id: string, complaintData: ComplaintRequest): Promise<void> {
-        await api.post(`/advice/${id}/complaints/add`, complaintData);
     },
 
     async getAllAdvices(

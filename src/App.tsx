@@ -6,6 +6,7 @@ import AdvicePage from "./ui/pages/AdvicePage.tsx";
 import WishPage from "./ui/pages/WishPage.tsx";
 import UserPage from "./ui/pages/UserPage.tsx";
 import UserUpdateModal from "./ui/components/UserUpdateModal.tsx";
+import UserSearchPage from "./ui/pages/UserSearchPage.tsx";
 
 export const App = () => {
     return (
@@ -21,7 +22,7 @@ export const App = () => {
                 <Route path="user">
                     <Route index element={<UserPage/>} />
                     <Route path=":id" element={<UserPage/>} />
-                    {/*<Route path="search" element={<UserSearchPage/>}/>*/}
+                    <Route path="search" element={<UserSearchPage/>}/>
                     <Route path="update" element={<UserUpdateModal/>}/>
                 </Route>
             </Route>

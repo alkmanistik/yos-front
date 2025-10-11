@@ -1,4 +1,4 @@
-import {Navigate, useLocation, useParams} from "react-router";
+import {Navigate, useLocation, useNavigate, useParams} from "react-router";
 import {useEffect, useState} from "react";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import UserProfile from "../utils/UserProfile.tsx";
@@ -26,19 +26,24 @@ const UserPage = () => {
 
     const displayUser = isOwnProfile ? currentUser : profileUser;
 
+    const navigate = useNavigate();
 
-    // Определяем чей профиль показывать
     useEffect(() => {
         const loadUserData = async () => {
             try {
                 setUserNotFound(false);
                 if (id) {
-                    setIsOwnProfile(false);
-                    const userData = await userApi.getUser(id);
-                    setProfileUser(userData);
+                    if (currentUser != null && currentUser.id == id){
+                        setIsOwnProfile(true);
+                        setProfileUser(currentUser);
+                    }
+                    else {
+                        setIsOwnProfile(false);
+                        const userData = await userApi.getUser(id);
+                        setProfileUser(userData);
+                    }
                 } else {
-                    setIsOwnProfile(true);
-                    setProfileUser(currentUser);
+                    if (currentUser) navigate(`/user/${currentUser.id}`, { replace: true });
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
@@ -58,7 +63,7 @@ const UserPage = () => {
     }, [location.search]);
 
     if (!currentUser && !id) {
-        return <Navigate to="/auth/login" replace />;
+        return <Navigate to="/" replace />;
     }
 
     // eslint-disable-next-line react-hooks/rules-of-hooks

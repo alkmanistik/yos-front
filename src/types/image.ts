@@ -1,3 +1,5 @@
+import type {EntityType} from "./entity.ts";
+
 export interface ImageAdminResponse {
     id: string;
     userId: string;
@@ -13,4 +15,10 @@ export interface ImageShortResponse {
     fileName: string;
     main: boolean;
     createdAt: string;
+}
+
+export interface ImageRequest {
+    entityId: string;
+    entityType: EntityType;
+    private: boolean;
 }
