@@ -22,7 +22,6 @@ export const useUserImages = (userId?: string) => {
         }
     }, [userId]);
 
-    // Принудительное обновление изображений
     const refreshImages = useCallback(() => {
         setLastUpdate(Date.now());
     }, []);
@@ -40,6 +39,6 @@ export const useUserImages = (userId?: string) => {
         images,
         loading,
         getAvatarUrl,
-        refreshImages // Добавляем функцию для принудительного обновления
+        refreshImages
     };
 };

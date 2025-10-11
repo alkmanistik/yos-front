@@ -6,6 +6,8 @@ import type {UserResponse} from "../../types/user.ts";
 import {userApi} from "../../api/userApi.ts";
 import ErrorPage from "./ErrorPage.tsx";
 import AdviceList from "../components/AdviceList.tsx";
+import SubscriptionsModal from "../components/SubscriptionsModal.tsx";
+import FollowersModal from "../components/FollowersModal.tsx";
 
 type TabType = 'advices' | 'wishes';
 
@@ -18,9 +20,13 @@ const UserPage = () => {
     const [userNotFound, setUserNotFound] = useState(false);
     const [counts, setCounts] = useState({
         wishes: 0,
-        advices: 0
+        advices: 0,
+        subscriptions: 0,
+        followers: 0
     });
     const [loadingCounts, setLoadingCounts] = useState(false);
+    const [showSubscriptionsModal, setShowSubscriptionsModal] = useState(false);
+    const [showFollowersModal, setShowFollowersModal] = useState(false);
 
     const [profileUser, setProfileUser] = useState<UserResponse | null>(null);
 
@@ -52,7 +58,7 @@ const UserPage = () => {
         };
 
         loadUserData();
-    }, [id, currentUser]);
+    }, [id, currentUser, navigate]);
 
     useEffect(() => {
         const searchParams = new URLSearchParams(location.search);
@@ -62,25 +68,24 @@ const UserPage = () => {
         }
     }, [location.search]);
 
-    if (!currentUser && !id) {
-        return <Navigate to="/" replace />;
-    }
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
         const loadCounts = async () => {
             if (!displayUser?.id) return;
 
             try {
                 setLoadingCounts(true);
-                const [wishCount, adviceCount] = await Promise.all([
+                const [wishCount, adviceCount, subscriptionsCount, followersCount] = await Promise.all([
                     userApi.getWishCount(displayUser.id),
-                    userApi.getAdviceCount(displayUser.id)
+                    userApi.getAdviceCount(displayUser.id),
+                    userApi.getSubCount(displayUser.id),
+                    userApi.getFolCount(displayUser.id)
                 ]);
 
                 setCounts({
                     wishes: wishCount,
-                    advices: adviceCount
+                    advices: adviceCount,
+                    subscriptions: subscriptionsCount,
+                    followers: followersCount
                 });
             } catch (error) {
                 console.error('Error loading counts:', error);
@@ -92,6 +97,9 @@ const UserPage = () => {
         loadCounts();
     }, [displayUser?.id]);
 
+    if (!currentUser && !id) {
+        return <Navigate to="/" replace />;
+    }
 
     if (userNotFound){
         return (
@@ -119,6 +127,10 @@ const UserPage = () => {
             <UserProfile
                 user={displayUser}
                 isOwnProfile={isOwnProfile}
+                counts={counts}
+                loadingCounts={loadingCounts}
+                onShowSubscriptions={() => setShowSubscriptionsModal(true)}
+                onShowFollowers={() => setShowFollowersModal(true)}
             />
 
             {/* Вкладки */}
@@ -134,11 +146,9 @@ const UserPage = () => {
                             }`}
                         >
                             📝 Советы
-                            {isOwnProfile && (
-                                <span className="ml-2 bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full">
-                                    {loadingCounts ? '...' : counts.advices}
-                                </span>
-                            )}
+                            <span className="ml-2 bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full">
+                                {loadingCounts ? '...' : counts.advices}
+                            </span>
                         </button>
                         <button
                             onClick={() => setActiveTab('wishes')}
@@ -149,14 +159,13 @@ const UserPage = () => {
                             }`}
                         >
                             🎁 Желания
-                            {isOwnProfile && (
-                                <span className="ml-2 bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full">
-                                    {loadingCounts ? '...' : counts.wishes}
-                                </span>
-                            )}
+                            <span className="ml-2 bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full">
+                                {loadingCounts ? '...' : counts.wishes}
+                            </span>
                         </button>
                     </nav>
                 </div>
+
                 {/* Контент вкладок */}
                 <div className="py-6">
                     {activeTab === 'advices' && (
@@ -175,6 +184,21 @@ const UserPage = () => {
                     {/*)}*/}
                 </div>
             </div>
+
+            {/* Модальные окна */}
+            {showSubscriptionsModal && (
+                <SubscriptionsModal
+                    userId={displayUser.id}
+                    onClose={() => setShowSubscriptionsModal(false)}
+                />
+            )}
+
+            {showFollowersModal && (
+                <FollowersModal
+                    userId={displayUser.id}
+                    onClose={() => setShowFollowersModal(false)}
+                />
+            )}
         </div>
     );
 };

@@ -132,7 +132,6 @@ const UserUpdateModal = () => {
         if (!user) return;
 
         try {
-            // Удаление аватара
             if (avatarAction === 'delete') {
                 const mainImage = userImages.find(img => img.main) || userImages[0];
                 if (mainImage) {
@@ -140,7 +139,6 @@ const UserUpdateModal = () => {
                 }
             }
 
-            // Загрузка нового аватара
             if (avatarAction === 'update' && avatarFile) {
                 await imageApi.uploadUserAvatar(user.id, avatarFile);
             }
@@ -174,12 +172,10 @@ const UserUpdateModal = () => {
                 return;
             }
 
-            // Обновляем данные пользователя
             if (hasDataChanges) {
                 await userApi.updateUser(updateData);
             }
 
-            // Управляем аватаром через imageApi
             if (hasAvatarChanges) {
                 await handleAvatarOperations();
             }
@@ -220,7 +216,7 @@ const UserUpdateModal = () => {
     const avatarDisplay = getAvatarDisplay();
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
                 {/* Заголовок */}
                 <div className="flex justify-between items-center mb-6">
