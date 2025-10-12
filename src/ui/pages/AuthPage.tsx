@@ -40,7 +40,7 @@ const AuthPage = () => {
                 };
                 await login(loginData);
             }
-            navigate('/');
+            navigate('/advice');
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
                 const errorMessage = err.response?.data?.message || err.message || 'An error occurred';
@@ -63,7 +63,7 @@ const AuthPage = () => {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 to-blue-500">
             <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
                 <h2 className="text-2xl font-bold text-center mb-6">
-                    {isRegister ? 'Register' : 'Login'}
+                    {isRegister ? 'Зарегистрироваться' : 'Войти'}
                 </h2>
 
                 {error && (
@@ -75,7 +75,7 @@ const AuthPage = () => {
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     {isRegister && (
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Username</label>
+                            <label className="block text-sm font-medium text-gray-700">Никнейм</label>
                             <input
                                 type="text"
                                 {...register('username', {required: 'Username is required'})}
@@ -88,7 +88,7 @@ const AuthPage = () => {
                         </div>
                     )}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Email</label>
+                        <label className="block text-sm font-medium text-gray-700">Почта</label>
                         <input
                             type="email"
                             {...register('email', {
@@ -106,7 +106,7 @@ const AuthPage = () => {
                         )}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Password</label>
+                        <label className="block text-sm font-medium text-gray-700">Пароль</label>
                         <input
                             type="password"
                             {...register('password', {
@@ -128,17 +128,17 @@ const AuthPage = () => {
                         disabled={isLoading}
                         className="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition"
                     >
-                        {isRegister ? 'Register' : 'Login'}
+                        {isRegister ? 'Зарегистрироваться' : 'Войти'}
                     </button>
                 </form>
                 <p className="mt-4 text-center text-sm">
-                    {isRegister ? 'Already have an account?' : "Don't have an account?"}
+                    {isRegister ? 'Уже есть аккаунт?' : "Ещё нету аккаунта?"}
                     <button
                         onClick={toggleForm}
                         disabled={isLoading}
                         className="ml-1 text-blue-600 hover:underline"
                     >
-                        {isRegister ? 'Login' : 'Register'}
+                        {isRegister ? 'Войти' : 'Зарегистрироваться'}
                     </button>
                 </p>
             </div>

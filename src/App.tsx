@@ -7,6 +7,10 @@ import WishPage from "./ui/pages/WishPage.tsx";
 import UserPage from "./ui/pages/UserPage.tsx";
 import UserUpdateModal from "./ui/components/UserUpdateModal.tsx";
 import UserSearchPage from "./ui/pages/UserSearchPage.tsx";
+import AdviceCreatePage from "./ui/pages/AdviceCreatePage.tsx";
+import AdviceDetailPage from "./ui/pages/AdviceDetailsPage.tsx";
+import WishCreatePage from "./ui/pages/WishCreatePage.tsx";
+import WishDetailPage from "./ui/pages/WishDetailPage.tsx";
 
 export const App = () => {
     return (
@@ -17,8 +21,16 @@ export const App = () => {
             </Route>
             <Route path="/" element={<LayoutPage/>}>
                 <Route index element={<HomePage/>}/>
-                <Route path="advice" element={<AdvicePage/>}/>
-                <Route path="wish" element={<WishPage/>}/>
+                <Route path="advice">
+                    <Route index element={<AdvicePage/>}/>
+                    <Route path=":id" element={<AdviceDetailPage/>}/>
+                    <Route path="create" element={<AdviceCreatePage/>}/>
+                </Route>
+                <Route path="wish">
+                    <Route index element={<WishPage/>}/>
+                    <Route path=":id" element={<WishDetailPage/>}/>
+                    <Route path="create" element={<WishCreatePage/>}/>
+                </Route>
                 <Route path="user">
                     <Route index element={<UserPage/>} />
                     <Route path=":id" element={<UserPage/>} />
@@ -27,7 +39,7 @@ export const App = () => {
                 </Route>
             </Route>
 
-            <Route path="*" element={<Navigate to="/" replace/>}/>
+            <Route path="*" element={<Navigate to="/advice" replace/>}/>
         </Routes>
     )
 }

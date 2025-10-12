@@ -25,7 +25,7 @@ export const adviceApi = {
         params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }
     ): Promise<AdviceShortResponse[]> {
         const { data } = await api.get<AdviceShortResponse[]>('/advice/search', {
-            params: { q: query, ...params }
+            params: { query: query, ...params }
         });
         return data;
     },

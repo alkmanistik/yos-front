@@ -14,6 +14,11 @@ export interface WishUpdateRequest {
     hidden?: boolean | null;
 }
 
+export interface WishReserveRequest {
+    message?: string | null;
+    reserveEndDate?: number;
+}
+
 export interface WishAdminResponse {
     id: string;
     userId: string;

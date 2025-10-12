@@ -5,6 +5,7 @@ import {useAuth} from '../../contexts/AuthContext';
 import {imageApi} from '../../api/imageApi';
 import {useUserImages} from '../../hooks/useUserImages';
 import SubscribeButton from "../components/SubscribeButton.tsx";
+import {useNavigate} from "react-router";
 
 interface UserProfileProps {
     user: UserResponse;
@@ -35,6 +36,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [, setIsFriend] = useState(false);
     const [, setLoadingSubscription] = useState(true);
+    const navigate = useNavigate();
 
     const avatarUrl = getAvatarUrl();
 
@@ -67,6 +69,10 @@ const UserProfile: React.FC<UserProfileProps> = ({
         checkSubscription();
     }, [currentUser, user.id, isOwnProfile, isSubscribed]);
 
+    const handleEditProfile = () => {
+        navigate('/user/update');
+    };
+
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-start space-x-6">
@@ -93,24 +99,34 @@ const UserProfile: React.FC<UserProfileProps> = ({
                     <div className="flex items-start justify-between">
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">
-                                {user.name || user.username}
+                                {user.username}
                             </h1>
-                            <p className="text-gray-500">@{user.username}</p>
+                            <p className="text-gray-500">{user.name ? user.name : ""}</p>
                             {user.informationForWish && (
                                 <p className="text-gray-600 mt-2">{user.informationForWish}</p>
                             )}
                         </div>
 
-                        {/* Кнопка подписки */}
-                        {!isOwnProfile && (
-                            <SubscribeButton
-                                targetUserId={user.id}
-                                size="md"
-                                variant="primary"
-                                showFriendStatus={true}
-                                onSubscriptionChange={onUpdateCounts}
-                            />
-                        )}
+                        {/* Кнопки действий */}
+                        <div className="flex space-x-2">
+                            {isOwnProfile && (
+                                <button
+                                    onClick={handleEditProfile}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                                >
+                                    ✏️
+                                </button>
+                            )}
+                            {!isOwnProfile && (
+                                <SubscribeButton
+                                    targetUserId={user.id}
+                                    size="md"
+                                    variant="primary"
+                                    showFriendStatus={true}
+                                    onSubscriptionChange={onUpdateCounts}
+                                />
+                            )}
+                        </div>
                     </div>
 
                     {/* Статистика */}

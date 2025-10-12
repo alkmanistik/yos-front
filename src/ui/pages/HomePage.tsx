@@ -1,4 +1,173 @@
+import {Link} from "react-router";
+import {useAuth} from "../../contexts/AuthContext.tsx";
+
 const HomePage = () => {
-    return null
-}
+
+    const {user: currentUser} = useAuth();
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100">
+            {/* Hero Section */}
+            <section className="py-20 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center">
+                        <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+                            Находи идеи для
+                            <span className="text-blue-600"> покупок</span> и
+                            <span className="text-purple-600"> подарков</span>
+                        </h1>
+                        <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                            Социальная сеть, где ты можешь открыть для себя новые товары,
+                            сохранять понравившиеся вещи и получать идеи подарков от друзей
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors">
+                                <Link to={`/advice`}>Начать исследовать</Link>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Hero Image Placeholder */}
+                    <div className="mt-16 bg-white rounded-2xl shadow-xl p-8 max-w-4xl mx-auto">
+                        <div className="aspect-video bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
+                            <div className="text-center">
+                                <div className="text-4xl mb-4">🛍️</div>
+                                <p className="text-gray-600 text-lg">
+                                    Здесь будет изображение с примером интерфейса - лента с товарами,
+                                    вишлисты пользователей и рекомендации друзей
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Features Section */}
+            <section className="py-16 bg-white">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                            Как это работает?
+                        </h2>
+                        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                            Открой для себя новый способ шопинга вместе с друзьями
+                        </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-8">
+                        {/* Feature 1 */}
+                        <div className="text-center p-6">
+                            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-2xl">💡</span>
+                            </div>
+                            <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                                Находи идеи
+                            </h3>
+                            <p className="text-gray-600">
+                                Просматривай ленту с товарами, которые рекомендуют другие пользователи.
+                                Открывай для себя новые бренды и интересные вещи
+                            </p>
+                        </div>
+
+                        {/* Feature 2 */}
+                        <div className="text-center p-6">
+                            <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-2xl">🎁</span>
+                            </div>
+                            <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                                Создавай вишлисты
+                            </h3>
+                            <p className="text-gray-600">
+                                Сохраняй понравившиеся товары в свои списки желаний.
+                                Делитесь ими с друзьями, чтобы они знали, что вам подарить
+                            </p>
+                        </div>
+
+                        {/* Feature 3 */}
+                        <div className="text-center p-6">
+                            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-2xl">👥</span>
+                            </div>
+                            <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                                Общайтесь с друзьями
+                            </h3>
+                            <p className="text-gray-600">
+                                Подписывайтесь на друзей, комментируйте их выбор и предлагайте
+                                свои варианты подарков. Шопинг становится веселее вместе!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Demo Section */}
+            <section className="py-20 bg-gray-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid lg:grid-cols-2 gap-12 items-center">
+                        <div>
+                            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+                                Больше не ломай голову над подарками
+                            </h2>
+                            <p className="text-lg text-gray-600 mb-6">
+                                Тебе больше не придется гадать, что подарить друзьям на день рождения.
+                                Просто зайди в их вишлист и выбери подарок, который они действительно хотят!
+                            </p>
+                            <ul className="space-y-3 text-gray-600">
+                                <li className="flex items-center">
+                                    <span className="text-green-500 mr-2">✓</span>
+                                    Видишь реальные желания друзей
+                                </li>
+                                <li className="flex items-center">
+                                    <span className="text-green-500 mr-2">✓</span>
+                                    Не даришь ненужные вещи
+                                </li>
+                                <li className="flex items-center">
+                                    <span className="text-green-500 mr-2">✓</span>
+                                    Получаешь именно то, что хочешь
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Demo Image Placeholder */}
+                        <div className="bg-white rounded-2xl shadow-xl p-6">
+                            <div className="aspect-square bg-gradient-to-br from-pink-50 to-orange-100 rounded-lg flex items-center justify-center">
+                                <div className="text-center">
+                                    <div className="text-4xl mb-4">📱</div>
+                                    <p className="text-gray-600">
+                                        Здесь будет скриншот мобильного приложения с вишлистом -
+                                        список товаров с фото, ценами и ссылками на покупку
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Auth Section */}
+            { !currentUser && (
+                <section className="py-20 bg-blue-600">
+                    <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                            Присоединяйся к сообществу
+                        </h2>
+                        <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+                            Тысячи пользователей уже нашли идеальные подарки и открыли для себя
+                            новые любимые бренды. Присоединяйся и ты!
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 rounded-lg font-semibold text-lg transition-colors">
+                                <Link to={`/auth/register`}>Зарегистрироваться</Link>
+                            </button>
+                            <button className="border-2 border-white text-white hover:bg-blue-700 px-8 py-3 rounded-lg font-semibold text-lg transition-colors">
+                                <Link to={`/auth/login`}>Войти</Link>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            )}
+        </div>
+    );
+};
+
 export default HomePage;

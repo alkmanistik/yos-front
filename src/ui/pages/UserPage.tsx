@@ -9,8 +9,10 @@ import AdviceList from "../components/AdviceList.tsx";
 import SubscriptionsModal from "../components/SubscriptionsModal.tsx";
 import FollowersModal from "../components/FollowersModal.tsx";
 import {subscriptionEvents} from '../../events/subscriptionEvents';
+import WishList from "../components/WishList.tsx";
+import {wishApi} from "../../api/wishApi.ts";
 
-type TabType = 'advices' | 'wishes';
+type TabType = 'advices' | 'wishes' | 'fulfilledWishes';
 
 const UserPage = () => {
     const {id} = useParams();
@@ -23,7 +25,8 @@ const UserPage = () => {
         wishes: 0,
         advices: 0,
         subscriptions: 0,
-        followers: 0
+        followers: 0,
+        wishFulfilled: 0,
     });
     const [loadingCounts, setLoadingCounts] = useState(false);
     const [showSubscriptionsModal, setShowSubscriptionsModal] = useState(false);
@@ -85,18 +88,20 @@ const UserPage = () => {
 
         try {
             setLoadingCounts(true);
-            const [wishCount, adviceCount, subscriptionsCount, followersCount] = await Promise.all([
-                userApi.getWishCount(displayUser.id),
+            const [wishCount, adviceCount, subscriptionsCount, followersCount, wishFulfilledCount] = await Promise.all([
+                wishApi.getWishCount(displayUser.id),
                 userApi.getAdviceCount(displayUser.id),
                 userApi.getSubCount(displayUser.id),
-                userApi.getFolCount(displayUser.id)
+                userApi.getFolCount(displayUser.id),
+                wishApi.getFulfilledWishCount(displayUser.id)
             ]);
 
             setCounts({
                 wishes: wishCount,
                 advices: adviceCount,
                 subscriptions: subscriptionsCount,
-                followers: followersCount
+                followers: followersCount,
+                wishFulfilled: wishFulfilledCount,
             });
         } catch (error) {
             console.error('Error loading counts:', error);
@@ -160,20 +165,33 @@ const UserPage = () => {
                         >
                             📝 Советы
                             <span className="ml-2 bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full">
-                                {loadingCounts ? '...' : counts.advices}
-                            </span>
+            {loadingCounts ? '...' : counts.advices}
+        </span>
                         </button>
                         <button
                             onClick={() => setActiveTab('wishes')}
                             className={`py-4 px-1 border-b-2 font-medium text-sm ${
                                 activeTab === 'wishes'
-                                    ? 'border-blue-500 text-blue-600'
+                                    ? 'border-purple-500 text-purple-600'
                                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                             }`}
                         >
                             🎁 Желания
+                            <span className="ml-2 bg-purple-100 text-purple-600 text-xs px-2 py-1 rounded-full">
+            {loadingCounts ? '...' : counts.wishes}
+                            </span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('fulfilledWishes')}
+                            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'fulfilledWishes'
+                                    ? 'border-green-500 text-green-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            ✅ Исполненные
                             <span className="ml-2 bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full">
-                                {loadingCounts ? '...' : counts.wishes}
+            {loadingCounts ? '...' : counts.wishFulfilled || 0}
                             </span>
                         </button>
                     </nav>
@@ -188,13 +206,21 @@ const UserPage = () => {
                             pageSize={10}
                         />
                     )}
-                    {/*{activeTab === 'wishes' && (*/}
-                    {/*    <WishList*/}
-                    {/*        userId={displayUser.id}*/}
-                    {/*        showActions={isOwnProfile}*/}
-                    {/*        pageSize={10}*/}
-                    {/*    />*/}
-                    {/*)}*/}
+                    {activeTab === 'wishes' && (
+                        <WishList
+                            userId={displayUser.id}
+                            showActions={isOwnProfile}
+                            pageSize={10}
+                        />
+                    )}
+                    {activeTab === 'fulfilledWishes' && (
+                        <WishList
+                            userId={displayUser.id}
+                            showActions={false}
+                            pageSize={10}
+                            showFulfilled={true}
+                        />
+                    )}
                 </div>
             </div>
 

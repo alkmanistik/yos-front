@@ -8,9 +8,9 @@ const TopBar = () => {
     const {user} = useAuth();
 
     const navigation = [
-        {name: 'Главная', href: '/'},
         {name: 'Идеи', href: '/advice'},
         {name: 'Желания', href: '/wish'},
+        {name: 'Органайзер', href: '/tool'},
     ];
 
     const isActive = (path: string) => location.pathname === path;
@@ -20,8 +20,8 @@ const TopBar = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
-                    <div className="flex-shrink-0">
-                        <Link to="/" className="text-xl font-bold text-blue-600">
+                    <div className="flex-shrink-0 w-24">
+                        <Link to="/advice" className="text-xl font-bold text-blue-600">
                             Yos
                         </Link>
                     </div>
