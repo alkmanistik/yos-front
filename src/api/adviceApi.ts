@@ -29,14 +29,6 @@ export const adviceApi = {
         });
         return data;
     },
-
-    async getMyAdvices(
-        params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }
-    ): Promise<AdviceShortResponse[]> {
-        const { data } = await api.get<AdviceShortResponse[]>('/advice/', { params });
-        return data;
-    },
-
     async createAdvice(adviceData: AdviceCreateRequest): Promise<AdviceResponse> {
         const { data } = await api.post<AdviceResponse>('/advice/', adviceData);
         return data;

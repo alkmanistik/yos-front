@@ -1,6 +1,7 @@
 import type {AdviceCreateRequest, AdviceResponse} from "../../types/advice.ts";
 import {useState} from "react";
 import {adviceApi} from "../../api/adviceApi.ts";
+import {imageApi} from "../../api/imageApi.ts";
 
 interface AdviceCreateModalProps {
     onSuccess: (advice: AdviceResponse) => void;
@@ -18,6 +19,8 @@ const AdviceCreateModal: React.FC<AdviceCreateModalProps> = ({
         category: '',
         public: true
     });
+    const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +43,11 @@ const AdviceCreateModal: React.FC<AdviceCreateModalProps> = ({
                 link: formData.link?.trim() || '',
                 category: formData.category?.trim() || ''
             });
+
+            for (const imageFile of imageFiles) {
+                await imageApi.uploadAdviceImage(newAdvice.id, imageFile);
+            }
+
             onSuccess(newAdvice);
         } catch (err) {
             console.error('Error creating advice:', err);
@@ -52,6 +60,27 @@ const AdviceCreateModal: React.FC<AdviceCreateModalProps> = ({
     const handleChange = (field: keyof AdviceCreateRequest, value: string | boolean) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (error) setError(null);
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length > 0) {
+            const newFiles = [...imageFiles, ...files];
+            setImageFiles(newFiles);
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    setImagePreviews(prev => [...prev, e.target?.result as string]);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    };
+
+    const removeImage = (index: number) => {
+        setImageFiles(prev => prev.filter((_, i) => i !== index));
+        setImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
 
     return (
@@ -68,6 +97,50 @@ const AdviceCreateModal: React.FC<AdviceCreateModalProps> = ({
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Изображения
+                        </label>
+                        {imagePreviews.length > 0 && (
+                            <div className="grid grid-cols-3 gap-2 mb-3">
+                                {imagePreviews.map((preview, index) => (
+                                    <div key={index} className="relative">
+                                        <img
+                                            src={preview}
+                                            alt={`Preview ${index + 1}`}
+                                            className="w-full h-24 object-cover rounded-lg"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => removeImage(index)}
+                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 w-6 h-6 flex items-center justify-center"
+                                        >
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <p className="text-sm text-gray-500 mt-2">Нажмите для загрузки изображений</p>
+                                <p className="text-xs text-gray-400">Можно выбрать несколько файлов</p>
+                            </div>
+                            <input
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                multiple
+                                onChange={handleImageChange}
+                            />
+                        </label>
+                    </div>
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Заголовок *
