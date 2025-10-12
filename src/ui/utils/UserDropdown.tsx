@@ -5,6 +5,7 @@ import {useUserImages} from "../../hooks/useUserImages.ts";
 
 const avatarUpdateEvent = new EventTarget();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const notifyAvatarUpdate = () => {
     avatarUpdateEvent.dispatchEvent(new Event('avatarUpdated'));
 };

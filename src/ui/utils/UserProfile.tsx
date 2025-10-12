@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
-import type { UserResponse } from '../../types/user';
-import { userApi } from '../../api/userApi';
-import { useAuth } from '../../contexts/AuthContext';
-import { imageApi } from '../../api/imageApi';
-import { useUserImages } from '../../hooks/useUserImages';
+import {useState, useEffect} from 'react';
+import type {UserResponse} from '../../types/user';
+import {userApi} from '../../api/userApi';
+import {useAuth} from '../../contexts/AuthContext';
+import {imageApi} from '../../api/imageApi';
+import {useUserImages} from '../../hooks/useUserImages';
+import SubscribeButton from "../components/SubscribeButton.tsx";
 
 interface UserProfileProps {
     user: UserResponse;
@@ -17,6 +18,7 @@ interface UserProfileProps {
     loadingCounts: boolean;
     onShowSubscriptions: () => void;
     onShowFollowers: () => void;
+    onUpdateCounts?: () => void;
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({
@@ -25,46 +27,45 @@ const UserProfile: React.FC<UserProfileProps> = ({
                                                      counts,
                                                      loadingCounts,
                                                      onShowSubscriptions,
-                                                     onShowFollowers
+                                                     onShowFollowers,
+                                                     onUpdateCounts,
                                                  }) => {
-    const { user: currentUser } = useAuth();
-    const { loading: loadingImages, getAvatarUrl } = useUserImages(user.id);
+    const {user: currentUser} = useAuth();
+    const {loading: loadingImages, getAvatarUrl} = useUserImages(user.id);
     const [isSubscribed, setIsSubscribed] = useState(false);
-    const [loadingSubscription, setLoadingSubscription] = useState(false);
+    const [, setIsFriend] = useState(false);
+    const [, setLoadingSubscription] = useState(true);
 
     const avatarUrl = getAvatarUrl();
 
     useEffect(() => {
         const checkSubscription = async () => {
-            if (!currentUser || isOwnProfile) return;
+            if (!currentUser || isOwnProfile) {
+                setIsFriend(false);
+                setIsSubscribed(false);
+                return;
+            }
 
+            setLoadingSubscription(true);
             try {
+                const subStatus = await userApi.getSubStatus(user.id);
+                if (subStatus.status == "FRIEND") {
+                    setIsFriend(true)
+                    setIsSubscribed(true)
+                } else if (subStatus.status == "SUB") {
+                    setIsSubscribed(true)
+                } else {
+                    setIsFriend(false);
+                    setIsSubscribed(false);
+                }
+                setLoadingSubscription(false);
             } catch (error) {
                 console.error('Error checking subscription:', error);
             }
         };
 
         checkSubscription();
-    }, [currentUser, user.id, isOwnProfile]);
-
-    const handleSubscription = async () => {
-        if (!currentUser || isOwnProfile) return;
-
-        setLoadingSubscription(true);
-        try {
-            if (isSubscribed) {
-                await userApi.removeSub(user.id);
-                setIsSubscribed(false);
-            } else {
-                await userApi.addSub(user.id);
-                setIsSubscribed(true);
-            }
-        } catch (error) {
-            console.error('Error updating subscription:', error);
-        } finally {
-            setLoadingSubscription(false);
-        }
-    };
+    }, [currentUser, user.id, isOwnProfile, isSubscribed]);
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -80,7 +81,8 @@ const UserProfile: React.FC<UserProfileProps> = ({
                             className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
                         />
                     ) : (
-                        <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        <div
+                            className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
                             {user.username.charAt(0).toUpperCase()}
                         </div>
                     )}
@@ -100,24 +102,14 @@ const UserProfile: React.FC<UserProfileProps> = ({
                         </div>
 
                         {/* Кнопка подписки */}
-                        {!isOwnProfile && currentUser && (
-                            <button
-                                onClick={handleSubscription}
-                                disabled={loadingSubscription}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                                    isSubscribed
-                                        ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                                } disabled:opacity-50 disabled:cursor-not-allowed`}
-                            >
-                                {loadingSubscription ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                                ) : isSubscribed ? (
-                                    'Отписаться'
-                                ) : (
-                                    'Подписаться'
-                                )}
-                            </button>
+                        {!isOwnProfile && (
+                            <SubscribeButton
+                                targetUserId={user.id}
+                                size="md"
+                                variant="primary"
+                                showFriendStatus={true}
+                                onSubscriptionChange={onUpdateCounts}
+                            />
                         )}
                     </div>
 

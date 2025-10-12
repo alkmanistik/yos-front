@@ -8,13 +8,14 @@ import ErrorPage from "./ErrorPage.tsx";
 import AdviceList from "../components/AdviceList.tsx";
 import SubscriptionsModal from "../components/SubscriptionsModal.tsx";
 import FollowersModal from "../components/FollowersModal.tsx";
+import {subscriptionEvents} from '../../events/subscriptionEvents';
 
 type TabType = 'advices' | 'wishes';
 
 const UserPage = () => {
-    const { id } = useParams();
+    const {id} = useParams();
     const location = useLocation();
-    const { user: currentUser } = useAuth();
+    const {user: currentUser} = useAuth();
     const [activeTab, setActiveTab] = useState<TabType>('advices');
     const [isOwnProfile, setIsOwnProfile] = useState(true);
     const [userNotFound, setUserNotFound] = useState(false);
@@ -35,21 +36,32 @@ const UserPage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        const handleSubscriptionsUpdate = () => {
+            loadCounts();
+        };
+
+        subscriptionEvents.addEventListener('subscriptionsUpdated', handleSubscriptionsUpdate);
+
+        return () => {
+            subscriptionEvents.removeEventListener('subscriptionsUpdated', handleSubscriptionsUpdate);
+        };
+    }, []);
+
+    useEffect(() => {
         const loadUserData = async () => {
             try {
                 setUserNotFound(false);
                 if (id) {
-                    if (currentUser != null && currentUser.id == id){
+                    if (currentUser != null && currentUser.id == id) {
                         setIsOwnProfile(true);
                         setProfileUser(currentUser);
-                    }
-                    else {
+                    } else {
                         setIsOwnProfile(false);
                         const userData = await userApi.getUser(id);
                         setProfileUser(userData);
                     }
                 } else {
-                    if (currentUser) navigate(`/user/${currentUser.id}`, { replace: true });
+                    if (currentUser) navigate(`/user/${currentUser.id}`, {replace: true});
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
@@ -68,40 +80,40 @@ const UserPage = () => {
         }
     }, [location.search]);
 
+    const loadCounts = async () => {
+        if (!displayUser?.id) return;
+
+        try {
+            setLoadingCounts(true);
+            const [wishCount, adviceCount, subscriptionsCount, followersCount] = await Promise.all([
+                userApi.getWishCount(displayUser.id),
+                userApi.getAdviceCount(displayUser.id),
+                userApi.getSubCount(displayUser.id),
+                userApi.getFolCount(displayUser.id)
+            ]);
+
+            setCounts({
+                wishes: wishCount,
+                advices: adviceCount,
+                subscriptions: subscriptionsCount,
+                followers: followersCount
+            });
+        } catch (error) {
+            console.error('Error loading counts:', error);
+        } finally {
+            setLoadingCounts(false);
+        }
+    };
+
     useEffect(() => {
-        const loadCounts = async () => {
-            if (!displayUser?.id) return;
-
-            try {
-                setLoadingCounts(true);
-                const [wishCount, adviceCount, subscriptionsCount, followersCount] = await Promise.all([
-                    userApi.getWishCount(displayUser.id),
-                    userApi.getAdviceCount(displayUser.id),
-                    userApi.getSubCount(displayUser.id),
-                    userApi.getFolCount(displayUser.id)
-                ]);
-
-                setCounts({
-                    wishes: wishCount,
-                    advices: adviceCount,
-                    subscriptions: subscriptionsCount,
-                    followers: followersCount
-                });
-            } catch (error) {
-                console.error('Error loading counts:', error);
-            } finally {
-                setLoadingCounts(false);
-            }
-        };
-
         loadCounts();
     }, [displayUser?.id]);
 
     if (!currentUser && !id) {
-        return <Navigate to="/" replace />;
+        return <Navigate to="/" replace/>;
     }
 
-    if (userNotFound){
+    if (userNotFound) {
         return (
             <ErrorPage
                 code={404}
@@ -131,6 +143,7 @@ const UserPage = () => {
                 loadingCounts={loadingCounts}
                 onShowSubscriptions={() => setShowSubscriptionsModal(true)}
                 onShowFollowers={() => setShowFollowersModal(true)}
+                onUpdateCounts={loadCounts}
             />
 
             {/* Вкладки */}

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { userApi } from '../../api/userApi';
 import type { UserShortResponse } from '../../types/user';
 import UserCard from './UserCard';
-import {useNavigate} from "react-router";
+import { useNavigate } from "react-router";
+import SubscribeButton from "./SubscribeButton.tsx";
 
 interface SubscriptionsModalProps {
     userId: string;
@@ -67,6 +68,15 @@ const SubscriptionsModal: React.FC<SubscriptionsModalProps> = ({ userId, onClose
                                 key={user.id}
                                 user={user}
                                 onClick={handleUserClick}
+                                showActionButton={true}
+                                actionButton={
+                                    <SubscribeButton
+                                        targetUserId={user.id}
+                                        size="sm"
+                                        variant="primary"
+                                        showFriendStatus={false}
+                                    />
+                                }
                             />
                         ))
                     )}

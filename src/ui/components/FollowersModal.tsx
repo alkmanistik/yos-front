@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { userApi } from '../../api/userApi';
 import type { UserShortResponse } from '../../types/user';
 import UserCard from './UserCard';
-import { useAuth } from '../../contexts/AuthContext';
 import {useNavigate} from "react-router";
+import SubscribeButton from "./SubscribeButton.tsx";
 
 interface FollowersModalProps {
     userId: string;
@@ -14,7 +14,6 @@ const FollowersModal: React.FC<FollowersModalProps> = ({ userId, onClose }) => {
     const [followers, setFollowers] = useState<UserShortResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { user: currentUser } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -37,14 +36,6 @@ const FollowersModal: React.FC<FollowersModalProps> = ({ userId, onClose }) => {
     const handleUserClick = (userId: string) => {
         navigate(`/user/${userId}`);
         onClose();
-    };
-
-    const handleSubscribe = async (targetUserId: string) => {
-        try {
-            await userApi.addSub(targetUserId);
-        } catch (err) {
-            console.error('Error subscribing:', err);
-        }
     };
 
     return (
@@ -77,9 +68,15 @@ const FollowersModal: React.FC<FollowersModalProps> = ({ userId, onClose }) => {
                                 key={user.id}
                                 user={user}
                                 onClick={handleUserClick}
-                                showActionButton={currentUser?.id !== user.id}
-                                actionButtonText="Подписаться"
-                                onActionClick={handleSubscribe}
+                                showActionButton={true}
+                                actionButton={
+                                    <SubscribeButton
+                                        targetUserId={user.id}
+                                        size="sm"
+                                        variant="primary"
+                                        showFriendStatus={false}
+                                    />
+                                }
                             />
                         ))
                     )}
