@@ -37,21 +37,8 @@ export const adviceApi = {
     async updateAdvice(
         id: string,
         updateData: AdviceUpdateRequest,
-        imageFile?: File
     ): Promise<AdviceResponse> {
-        const formData = new FormData();
-
-        if (updateData) {
-            formData.append('adviceUpdateRequest', JSON.stringify(updateData));
-        }
-
-        if (imageFile) {
-            formData.append('wishImage', imageFile);
-        }
-
-        const { data } = await api.patch<AdviceResponse>(`/advice/${id}`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const { data } = await api.patch<AdviceResponse>(`/advice/${id}`, updateData);
         return data;
     },
 

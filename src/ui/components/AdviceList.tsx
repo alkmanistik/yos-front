@@ -7,6 +7,7 @@ import AdviceComponent from "./AdviceComponent.tsx";
 import AdviceShortComponent from "./AdviceShortComponent.tsx";
 import AdviceCreateModal from "./AdviceCreateModal.tsx";
 import {userApi} from "../../api/userApi.ts";
+import AdviceEditModal from "./AdviceEditModal.tsx";
 
 interface AdviceListProps {
     userId?: string;
@@ -40,6 +41,29 @@ const AdviceList: React.FC<AdviceListProps> = ({
         total: 0
     });
     const [error, setError] = useState<string | null>(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingAdvice, setEditingAdvice] = useState<AdviceResponse | null>(null);
+
+    const handleEdit = async (advice: AdviceShortResponse) => {
+        const loadAdvice = await adviceApi.getAdviceById(advice.id);
+        setEditingAdvice(loadAdvice);
+        setShowEditModal(true);
+    };
+
+    const handleEditSuccess = (updatedAdvice: AdviceResponse) => {
+        setShowEditModal(false);
+        setEditingAdvice(null);
+        // Обновить список или детали
+        if (selectedAdviceId === updatedAdvice.id) {
+            setSelectedAdvice(updatedAdvice);
+        }
+        loadAdvices(pagination.page, false);
+    };
+
+    const handleEditCancel = () => {
+        setShowEditModal(false);
+        setEditingAdvice(null);
+    };
 
     const loadAdvices = async (page: number = 0, append: boolean = false) => {
         try {
@@ -135,10 +159,6 @@ const AdviceList: React.FC<AdviceListProps> = ({
         setSelectedAdvice(null);
     };
 
-    const handleEdit = (advice: AdviceShortResponse) => {
-        console.log('Edit advice:', advice);
-    };
-
     const handleDelete = async (adviceId: string) => {
         if (window.confirm('Вы уверены, что хотите удалить этот совет?')) {
             try {
@@ -228,7 +248,7 @@ const AdviceList: React.FC<AdviceListProps> = ({
             )}
 
             {/* Список советов */}
-            <div className="grid gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                 {advices.map(advice => (
                     <AdviceShortComponent
                         key={advice.id}
@@ -293,6 +313,13 @@ const AdviceList: React.FC<AdviceListProps> = ({
                 <AdviceCreateModal
                     onSuccess={handleCreateSuccess}
                     onCancel={handleCreateCancel}
+                />
+            )}
+            {showEditModal && editingAdvice && (
+                <AdviceEditModal
+                    advice={editingAdvice}
+                    onSuccess={handleEditSuccess}
+                    onCancel={handleEditCancel}
                 />
             )}
         </div>
