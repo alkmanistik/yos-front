@@ -74,7 +74,6 @@ const AdviceCreatePage = () => {
 
         try {
             if (isEditing && editId) {
-                // Редактирование существующего совета
                 const updateData: AdviceUpdateRequest = {
                     title: formData.title.trim(),
                     description: formData.description?.trim() || '',
@@ -85,13 +84,10 @@ const AdviceCreatePage = () => {
 
                 const updatedAdvice = await adviceApi.updateAdvice(editId, updateData);
 
-                // Обновление изображений
                 if (imageFiles.length > 0) {
-                    // Удаляем старые изображения
                     for (const imageId of existingImages) {
                         await imageApi.deleteImage(imageId);
                     }
-                    // Загружаем новые
                     for (const imageFile of imageFiles) {
                         await imageApi.uploadAdviceImage(updatedAdvice.id, imageFile);
                     }
@@ -99,7 +95,6 @@ const AdviceCreatePage = () => {
 
                 navigate(`/advice/${updatedAdvice.id}`);
             } else {
-                // Создание нового совета
                 const newAdvice = await adviceApi.createAdvice({
                     ...formData,
                     title: formData.title.trim(),
@@ -108,7 +103,6 @@ const AdviceCreatePage = () => {
                     category: formData.category?.trim() || ''
                 });
 
-                // Загрузка изображений
                 for (const imageFile of imageFiles) {
                     await imageApi.uploadAdviceImage(newAdvice.id, imageFile);
                 }

@@ -2,6 +2,7 @@ import {useEffect, useRef, useState} from "react";
 import {useAuth} from "../../contexts/AuthContext.tsx";
 import {useNavigate} from "react-router";
 import {useUserImages} from "../../hooks/useUserImages.ts";
+import {userApi} from "../../api/userApi.ts";
 
 const avatarUpdateEvent = new EventTarget();
 
@@ -12,12 +13,32 @@ export const notifyAvatarUpdate = () => {
 
 const UserDropdown = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const [userStatus, setUserStatus] = useState<string>('');
+    const [loadingStatus, setLoadingStatus] = useState(true);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const { loading: loadingImages, getAvatarUrl, refreshImages } = useUserImages(user?.id);
 
     const avatarUrl = getAvatarUrl();
+
+    useEffect(() => {
+        const loadUserStatus = async () => {
+            if (user?.id) {
+                try {
+                    setLoadingStatus(true);
+                    const status = await userApi.getUserStatus(user.id);
+                    setUserStatus(status.status);
+                } catch (error) {
+                    console.error('Error loading user status:', error);
+                } finally {
+                    setLoadingStatus(false);
+                }
+            }
+        };
+
+        loadUserStatus();
+    }, [user?.id]);
 
     useEffect(() => {
         const handleAvatarUpdate = () => {
@@ -68,6 +89,15 @@ const UserDropdown = () => {
         },
     ];
 
+    if (userStatus === 'SUPPORT' && !loadingStatus) {
+        menuItems.push({
+            icon: '⚙️',
+            label: 'Админ панель',
+            path: '/admin',
+            description: 'Управление системой'
+        });
+    }
+
     return (
         <div className="relative" ref={dropdownRef}>
             {/* Кнопка пользователя */}
@@ -82,7 +112,7 @@ const UserDropdown = () => {
                         src={"http://localhost:8080" + avatarUrl}
                         alt={`${user?.username}'s avatar`}
                         className="w-8 h-8 rounded-full object-cover shadow-sm"
-                        key={avatarUrl} // Добавляем key для принудительного обновления
+                        key={avatarUrl}
                     />
                 ) : (
                     <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm">
@@ -104,12 +134,21 @@ const UserDropdown = () => {
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
                     {/* Заголовок */}
                     <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-sm font-medium text-gray-900">
-                            {user?.name || user?.username}
-                        </p>
-                        <p className="text-sm text-gray-500 truncate">
-                            {user?.email}
-                        </p>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                    {user?.name || user?.username}
+                                </p>
+                                <p className="text-sm text-gray-500 truncate">
+                                    {user?.email}
+                                </p>
+                            </div>
+                            {userStatus === 'SUPPORT' && (
+                                <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">
+                                    SUPPORT
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     {/* Список пунктов меню */}

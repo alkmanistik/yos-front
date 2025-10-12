@@ -66,11 +66,9 @@ const WishUpdateModal: React.FC<WishUpdateModalProps> = ({
             );
 
             if (imageFile) {
-                // Сначала удаляем старую картинку если есть
                 if (existingImage) {
                     await imageApi.deleteImage(existingImage);
                 }
-                // Загружаем новую
                 await imageApi.uploadWishImage(wish.id, imageFile);
             }
 

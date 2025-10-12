@@ -85,19 +85,15 @@ const WishCreatePage = () => {
 
                 const updatedWish = await wishApi.updateWish(editId, updateData);
 
-                // Обновление изображения
                 if (imageFile) {
-                    // Удаляем старое изображение если есть
                     if (existingImage) {
                         await imageApi.deleteImage(existingImage);
                     }
-                    // Загружаем новое
                     await imageApi.uploadWishImage(updatedWish.id, imageFile);
                 }
 
                 navigate(`/wish/${updatedWish.id}`);
             } else {
-                // Создание нового желания
                 const newWish = await wishApi.createWish({
                     ...formData,
                     title: formData.title.trim(),
@@ -106,7 +102,6 @@ const WishCreatePage = () => {
                     link: formData.link?.trim() || ''
                 });
 
-                // Загрузка изображения
                 if (imageFile) {
                     await imageApi.uploadWishImage(newWish.id, imageFile);
                 }

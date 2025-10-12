@@ -182,7 +182,6 @@ const UserUpdateModal = () => {
 
             await checkAuth();
 
-            // Уведомляем об обновлении аватара
             if (avatarAction !== 'keep') {
                 const { notifyAvatarUpdate } = await import('../utils/UserDropdown.tsx');
                 notifyAvatarUpdate();

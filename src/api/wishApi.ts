@@ -93,15 +93,5 @@ export const wishApi = {
     async getReserveStatus(id: string): Promise<Status> {
         const { data } = await api.get<Status>(`/wish/${id}/isReservedByMe`);
         return data;
-    },
-
-    async getAllWishes(
-        query?: string,
-        params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }
-    ): Promise<WishShortResponse[]> {
-        const { data } = await api.get<WishShortResponse[]>('/admin/wish', {
-            params: { q: query, ...params }
-        });
-        return data;
     }
 };

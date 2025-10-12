@@ -44,15 +44,14 @@ const WishPage = () => {
     const loadFriendsWishes = async () => {
         try {
             setLoadingFriends(true);
-            // Здесь должен быть API для желаний друзей
-            // Пока используем mock или общий поиск
+            // todo(Желание друзей)
             const params: PaginationParams = {
                 page: 0,
                 size: 6,
                 sort: 'DESC'
             };
             const response = await wishApi.searchWishes(undefined, params);
-            setFriendsWishes(response.slice(0, 6)); // Берем первые 6 для примера
+            setFriendsWishes(response.slice(0, 6));
         } catch (error) {
             console.error('Error loading friends wishes:', error);
         } finally {

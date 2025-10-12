@@ -181,7 +181,6 @@ const WishList: React.FC<WishListProps> = ({
         if (window.confirm('Отметить желание как исполненное?')) {
             try {
                 await wishApi.markAsFulfilled(wishId);
-                // Обновить список или детали
                 if (selectedWishId === wishId) {
                     const updatedWish = await wishApi.getWishById(wishId);
                     setSelectedWish(updatedWish);

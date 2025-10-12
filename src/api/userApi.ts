@@ -96,10 +96,5 @@ export const userApi = {
     async getSubStatus(targetId: string): Promise<Status> {
         const { data } = await api.get(`/user/${targetId}/sub/status`);
         return data;
-    },
-
-    async getAllUsers(query = '', params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }): Promise<UserAdminResponse[]> {
-        const { data } = await api.get('/admin/users', { params: { query, ...params } });
-        return data;
     }
 };

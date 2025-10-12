@@ -1,4 +1,10 @@
-import type {AdviceCreateRequest, AdviceResponse, AdviceShortResponse, AdviceUpdateRequest} from "../types/advice.ts";
+import type {
+    AdviceAdminResponse,
+    AdviceCreateRequest,
+    AdviceResponse,
+    AdviceShortResponse,
+    AdviceUpdateRequest
+} from "../types/advice.ts";
 import api from "./indexApi.ts";
 import type {Status} from "../types/status.ts";
 import type {UserShortResponse} from "../types/user.ts";
@@ -49,8 +55,8 @@ export const adviceApi = {
     async getAllAdvices(
         query?: string,
         params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }
-    ): Promise<AdviceShortResponse[]> {
-        const { data } = await api.get<AdviceShortResponse[]>('/admin/advice/', {
+    ): Promise<AdviceAdminResponse[]> {
+        const { data } = await api.get<AdviceAdminResponse[]>('/admin/advice/', {
             params: { q: query, ...params }
         });
         return data;

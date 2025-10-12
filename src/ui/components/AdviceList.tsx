@@ -53,7 +53,6 @@ const AdviceList: React.FC<AdviceListProps> = ({
     const handleEditSuccess = (updatedAdvice: AdviceResponse) => {
         setShowEditModal(false);
         setEditingAdvice(null);
-        // Обновить список или детали
         if (selectedAdviceId === updatedAdvice.id) {
             setSelectedAdvice(updatedAdvice);
         }
