@@ -26,6 +26,16 @@ export const adviceApi = {
         return data;
     },
 
+    async getAdvice(id: string, params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }): Promise<AdviceShortResponse[]> {
+        const { data } = await api.get(`/advice/user/${id}`, { params });
+        return data;
+    },
+
+    async getAdviceCount(id: string): Promise<number> {
+        const { data } = await api.get(`/advice/user/${id}/count`);
+        return data;
+    },
+
     async searchAdvices(
         query?: string,
         params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }

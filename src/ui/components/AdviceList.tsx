@@ -78,7 +78,7 @@ const AdviceList: React.FC<AdviceListProps> = ({
             let response: AdviceShortResponse[];
 
             if (userId) {
-                response = await userApi.getAdvice(userId, params);
+                response = await adviceApi.getAdvice(userId, params);
             } else if (query) {
                 response = await adviceApi.searchAdvices(query, params);
             } else {

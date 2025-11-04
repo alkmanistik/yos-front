@@ -11,6 +11,7 @@ import FollowersModal from "../components/FollowersModal.tsx";
 import {subscriptionEvents} from '../../events/subscriptionEvents';
 import WishList from "../components/WishList.tsx";
 import {wishApi} from "../../api/wishApi.ts";
+import {adviceApi} from "../../api/adviceApi.ts";
 
 type TabType = 'advices' | 'wishes' | 'fulfilledWishes';
 
@@ -90,7 +91,7 @@ const UserPage = () => {
             setLoadingCounts(true);
             const [wishCount, adviceCount, subscriptionsCount, followersCount, wishFulfilledCount] = await Promise.all([
                 wishApi.getWishCount(displayUser.id),
-                userApi.getAdviceCount(displayUser.id),
+                adviceApi.getAdviceCount(displayUser.id),
                 userApi.getSubCount(displayUser.id),
                 userApi.getFolCount(displayUser.id),
                 wishApi.getFulfilledWishCount(displayUser.id)

@@ -2,8 +2,6 @@ import type {UserAdminResponse, UserResponse, UserShortResponse, UserUpdateReque
 import api from "./indexApi.ts";
 import type {Status} from "../types/status.ts";
 import type {PaginationParams} from "../types/pagination.ts";
-import type {WishShortResponse} from "../types/wish.ts";
-import type {AdviceShortResponse} from "../types/advice.ts";
 
 export const userApi = {
     async getUser(id: string): Promise<UserResponse> {
@@ -54,32 +52,6 @@ export const userApi = {
         const { data } = await api.get(`/user/${id}/fol/count`);
         return data;
     },
-
-    async getWish(id: string, params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }): Promise<WishShortResponse[]> {
-        const { data } = await api.get(`/user/${id}/wish`, { params });
-        return data;
-    },
-
-    async getWishCount(id: string): Promise<number> {
-        const { data } = await api.get(`/user/${id}/wish/count`);
-        return data;
-    },
-
-    async getFulfilledWishlist(id: string, params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }): Promise<WishShortResponse[]> {
-        const { data } = await api.get(`/user/${id}/wish/fulfilled`, { params });
-        return data;
-    },
-
-    async getAdvice(id: string, params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }): Promise<AdviceShortResponse[]> {
-        const { data } = await api.get(`/user/${id}/advice`, { params });
-        return data;
-    },
-
-    async getAdviceCount(id: string): Promise<number> {
-        const { data } = await api.get(`/user/${id}/advice/count`);
-        return data;
-    },
-
     async searchUsers(query: string, params: PaginationParams = { page: 0, size: 10, sort: 'ASC' }): Promise<UserShortResponse[]> {
         const { data } = await api.get(`/user/search`, { params: { query, ...params } });
         return data;
