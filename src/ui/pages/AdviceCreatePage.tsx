@@ -22,6 +22,7 @@ const AdviceCreatePage = () => {
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [existingImages, setExistingImages] = useState<string[]>([]);
+    const [deletedImages, setDeletedImages] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
@@ -84,10 +85,11 @@ const AdviceCreatePage = () => {
 
                 const updatedAdvice = await adviceApi.updateAdvice(editId, updateData);
 
+                for (const id of deletedImages) {
+                    await imageApi.deleteImage(id);
+                }
+
                 if (imageFiles.length > 0) {
-                    for (const imageId of existingImages) {
-                        await imageApi.deleteImage(imageId);
-                    }
                     for (const imageFile of imageFiles) {
                         await imageApi.uploadAdviceImage(updatedAdvice.id, imageFile);
                     }
@@ -181,6 +183,32 @@ const AdviceCreatePage = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-3">
                                 Изображения
                             </label>
+                            {/* Существующие изображения при редактировании */}
+                            {isEditing && existingImages.length > 0 && (
+                                <div className="grid grid-cols-3 gap-3 mb-4">
+                                    {existingImages.map((imageId, index) => (
+                                        <div key={imageId} className="relative">
+                                            <img
+                                                src={imageApi.getImageUrl(imageId)}
+                                                alt={`Existing ${index + 1}`}
+                                                className="w-full h-24 object-cover rounded-lg"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setExistingImages(prev => prev.filter(id => id !== imageId));
+                                                    setDeletedImages(prev => [...prev, imageId]);
+                                                }}
+                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 w-6 h-6 flex items-center justify-center"
+                                            >
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                             {imagePreviews.length > 0 && (
                                 <div className="grid grid-cols-3 gap-3 mb-4">
                                     {imagePreviews.map((preview, index) => (
