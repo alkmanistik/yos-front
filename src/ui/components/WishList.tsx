@@ -5,8 +5,7 @@ import type {PaginationParams} from "../../types/pagination.ts";
 import {wishApi} from "../../api/wishApi.ts";
 import WishComponent from "./WishComponent.tsx";
 import WishShortComponent from "./WishShortComponent.tsx";
-import WishCreateModal from "./WishCreateModal.tsx";
-import WishUpdateModal from "./WishUpdateModal.tsx";
+import {useNavigate} from "react-router";
 
 interface WishListProps {
     userId?: string;
@@ -34,7 +33,6 @@ const WishList: React.FC<WishListProps> = ({
     const [selectedWish, setSelectedWish] = useState<WishResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [, setLoadingDetails] = useState(false);
-    const [showCreateModal, setShowCreateModal] = useState(false);
     const [pagination, setPagination] = useState({
         page: initialPage,
         size: pageSize,
@@ -42,26 +40,14 @@ const WishList: React.FC<WishListProps> = ({
         total: 0
     });
     const [error, setError] = useState<string | null>(null);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editingWish, setEditingWish] = useState<WishResponse | null>(null);
+    const navigate = useNavigate();
 
     const handleEdit = (wish: WishResponse) => {
-        setEditingWish(wish);
-        setShowEditModal(true);
+        navigate("/wish/create?edit=" + wish.id)
     };
 
-    const handleEditSuccess = (updatedWish: WishResponse) => {
-        setShowEditModal(false);
-        setEditingWish(null);
-        if (selectedWishId === updatedWish.id) {
-            setSelectedWish(updatedWish);
-        }
-        loadWishes(pagination.page, false);
-    };
-
-    const handleEditCancel = () => {
-        setShowEditModal(false);
-        setEditingWish(null);
+    const handleAddNew = () => {
+        navigate("/wish/create")
     };
 
     const loadWishes = async (page: number = 0, append: boolean = false) => {
@@ -122,19 +108,6 @@ const WishList: React.FC<WishListProps> = ({
         } finally {
             setLoadingDetails(false);
         }
-    };
-
-    const handleAddNew = () => {
-        setShowCreateModal(true);
-    };
-
-    const handleCreateSuccess = () => {
-        setShowCreateModal(false);
-        loadWishes(0, false);
-    };
-
-    const handleCreateCancel = () => {
-        setShowCreateModal(false);
     };
 
     useEffect(() => {
@@ -319,20 +292,6 @@ const WishList: React.FC<WishListProps> = ({
                         </button>
                     )}
                 </div>
-            )}
-
-            {showCreateModal && (
-                <WishCreateModal
-                    onSuccess={handleCreateSuccess}
-                    onCancel={handleCreateCancel}
-                />
-            )}
-            {showEditModal && editingWish && (
-                <WishUpdateModal
-                    wish={editingWish}
-                    onSuccess={handleEditSuccess}
-                    onCancel={handleEditCancel}
-                />
             )}
         </div>
     );
