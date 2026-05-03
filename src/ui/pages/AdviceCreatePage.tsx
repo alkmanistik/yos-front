@@ -17,6 +17,7 @@ const AdviceCreatePage = () => {
         description: '',
         link: '',
         category: '',
+        price: '',
         public: true
     });
     const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -48,6 +49,7 @@ const AdviceCreatePage = () => {
                 description: advice.description || '',
                 link: advice.link || '',
                 category: advice.category || '',
+                price: advice.price || '',
                 public: true
             });
 
@@ -80,6 +82,7 @@ const AdviceCreatePage = () => {
                     description: formData.description?.trim() || '',
                     link: formData.link?.trim() || '',
                     category: formData.category?.trim() || '',
+                    price: formData.price?.trim() || '',
                     public: formData.public
                 };
 
@@ -102,7 +105,8 @@ const AdviceCreatePage = () => {
                     title: formData.title.trim(),
                     description: formData.description?.trim() || '',
                     link: formData.link?.trim() || '',
-                    category: formData.category?.trim() || ''
+                    category: formData.category?.trim() || '',
+                    price: formData.price?.trim() || ''
                 });
 
                 for (const imageFile of imageFiles) {
@@ -302,6 +306,20 @@ const AdviceCreatePage = () => {
                                 value={formData.category || ''}
                                 onChange={(e) => handleChange('category', e.target.value)}
                                 placeholder="Например: Кулинария, Техника, Здоровье..."
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            />
+                        </div>
+
+                        {/* Цена */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Цена
+                            </label>
+                            <input
+                                type="text"
+                                value={formData.price || ''}
+                                onChange={(e) => handleChange('price', e.target.value)}
+                                placeholder="Например: 999 руб."
                                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             />
                         </div>

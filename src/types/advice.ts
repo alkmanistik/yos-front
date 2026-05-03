@@ -5,6 +5,7 @@ export interface AdviceAdminResponse {
     description: string;
     link?: string | null;
     category?: string | null;
+    price?: string | null;
     adAdvice: boolean;
     createdAt: string;
     updatedAt: string;
@@ -17,6 +18,7 @@ export interface AdviceResponse {
     description: string;
     link?: string | null;
     category?: string | null;
+    price?: string | null;
     adAdvice: boolean;
     createdAt: string;
     updatedAt: string;
@@ -27,6 +29,7 @@ export interface AdviceShortResponse {
     userId: string;
     title: string;
     category?: string | null;
+    price?: string | null;
     adAdvice: boolean;
 }
 
@@ -35,7 +38,12 @@ export interface AdviceCreateRequest {
     description: string;
     link?: string | null;
     category?: string | null;
+    price?: string | null;
     public?: boolean;
+}
+
+export interface AdviceToWishRequest {
+    hidden?: boolean | null;
 }
 
 export interface AdviceUpdateRequest {
@@ -43,5 +51,6 @@ export interface AdviceUpdateRequest {
     description?: string | null;
     link?: string | null;
     category?: string | null;
+    price?: string | null;
     public?: boolean | null;
 }

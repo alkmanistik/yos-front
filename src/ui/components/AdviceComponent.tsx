@@ -1,25 +1,32 @@
-import type {AdviceResponse} from "../../types/advice.ts";
+import type {AdviceResponse, AdviceToWishRequest} from "../../types/advice.ts";
 import * as React from "react";
 import {Link} from "react-router";
 import {useEffect, useState} from "react";
 import {imageApi} from "../../api/imageApi.ts";
 import type {ImageShortResponse} from "../../types/image.ts";
+import {adviceApi} from "../../api/adviceApi.ts";
 
 interface AdviceComponentProps {
     advice: AdviceResponse;
     onBack?: () => void;
     onEdit?: (advice: AdviceResponse) => void;
     onDelete?: (adviceId: string) => void;
+    onWishCreated?: () => void; // Колбэк после успешного создания желания
 }
 
 const AdviceComponent: React.FC<AdviceComponentProps> = ({
                                                              advice,
                                                              onEdit,
-                                                             onDelete
+                                                             onDelete,
+                                                             onWishCreated
                                                          }) => {
     const [images, setImages] = useState<ImageShortResponse[]>([]);
     const [, setLoadingImages] = useState(true);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [isCreatingWish, setIsCreatingWish] = useState(false);
+    const [wishError, setWishError] = useState<string | null>(null);
+    const [showHiddenOption, setShowHiddenOption] = useState(false);
+    const [isHidden, setIsHidden] = useState(false);
 
     useEffect(() => {
         const loadImages = async () => {
@@ -45,6 +52,31 @@ const AdviceComponent: React.FC<AdviceComponentProps> = ({
         onDelete?.(advice.id);
     };
 
+    const handleCreateWish = async () => {
+        setIsCreatingWish(true);
+        setWishError(null);
+
+        try {
+            const wishRequest: AdviceToWishRequest = {
+                hidden: isHidden || null // Если hidden true, отправляем true, иначе null
+            };
+
+            await adviceApi.adviceToWish(advice.id, wishRequest);
+
+            onWishCreated?.();
+
+            setShowHiddenOption(false);
+            setIsHidden(false);
+
+            alert('Желание успешно создано из совета!');
+        } catch (error) {
+            console.error('Error creating wish from advice:', error);
+            setWishError('Не удалось создать желание. Попробуйте позже.');
+        } finally {
+            setIsCreatingWish(false);
+        }
+    };
+
     const nextImage = () => {
         setCurrentImageIndex((prev) => (prev + 1) % images.length);
     };
@@ -52,6 +84,17 @@ const AdviceComponent: React.FC<AdviceComponentProps> = ({
     const prevImage = () => {
         setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
     };
+
+    const formatPrice = (price?: string | null) => {
+        if (!price) return null;
+        // Если цена уже с символом валюты, возвращаем как есть
+        if (price.includes('Руб') || price.includes('руб') || price.includes('₽') || price.includes('$') || price.includes('€')) {
+            return price;
+        }
+        return `${price} ₽`;
+    };
+
+    const displayPrice = formatPrice(advice.price);
 
     return (
         <div className="bg-white border border-gray-200 rounded-lg p-6 max-w-2xl mx-auto">
@@ -143,6 +186,12 @@ const AdviceComponent: React.FC<AdviceComponentProps> = ({
                     </span>
                 )}
 
+                {displayPrice && (
+                    <span className="bg-green-100 text-green-800 text-sm px-2 py-1 rounded font-medium">
+                        💰 {displayPrice}
+                    </span>
+                )}
+
                 {advice.adAdvice && (
                     <span className="bg-orange-100 text-orange-800 text-sm px-2 py-1 rounded font-medium">
                         💼 Рекламный
@@ -162,6 +211,70 @@ const AdviceComponent: React.FC<AdviceComponentProps> = ({
                     </a>
                 </div>
             )}
+
+            {/* Кнопка создания желания с опциями */}
+            <div className="mb-4 space-y-3">
+                {!showHiddenOption ? (
+                    <button
+                        onClick={() => setShowHiddenOption(true)}
+                        className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+                    >
+                        <span>✨</span>
+                        <span>Создать желание из совета</span>
+                    </button>
+                ) : (
+                    <div className="space-y-3">
+                        <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                            <input
+                                type="checkbox"
+                                id="hiddenWish"
+                                checked={isHidden}
+                                onChange={(e) => setIsHidden(e.target.checked)}
+                                className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                            />
+                            <label htmlFor="hiddenWish" className="text-sm text-gray-700">
+                                Создать скрытое желание (будет видно только вам)
+                            </label>
+                        </div>
+
+                        <div className="flex space-x-3">
+                            <button
+                                onClick={handleCreateWish}
+                                disabled={isCreatingWish}
+                                className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+                            >
+                                {isCreatingWish ? (
+                                    <>
+                                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <span>Создание...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>✅</span>
+                                        <span>Подтвердить</span>
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowHiddenOption(false);
+                                    setIsHidden(false);
+                                }}
+                                className="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                            >
+                                Отмена
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {wishError && (
+                    <p className="text-red-600 text-sm mt-2">{wishError}</p>
+                )}
+            </div>
 
             <div className="flex justify-between items-center text-sm text-gray-500 border-t border-gray-100 pt-4">
                 <Link

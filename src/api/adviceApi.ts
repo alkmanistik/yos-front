@@ -2,7 +2,7 @@ import type {
     AdviceAdminResponse,
     AdviceCreateRequest,
     AdviceResponse,
-    AdviceShortResponse,
+    AdviceShortResponse, AdviceToWishRequest,
     AdviceUpdateRequest
 } from "../types/advice.ts";
 import api from "./indexApi.ts";
@@ -47,6 +47,14 @@ export const adviceApi = {
     },
     async createAdvice(adviceData: AdviceCreateRequest): Promise<AdviceResponse> {
         const { data } = await api.post<AdviceResponse>('/advice/', adviceData);
+        return data;
+    },
+
+    async adviceToWish(
+        id: string,
+        adviceData: AdviceToWishRequest
+    ): Promise<AdviceResponse> {
+        const { data } = await api.post<AdviceResponse>(`/advice/${id}/to-wish`, adviceData);
         return data;
     },
 

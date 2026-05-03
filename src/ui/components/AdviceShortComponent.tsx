@@ -54,6 +54,16 @@ const AdviceShortComponent: React.FC<AdviceShortComponentProps> = ({
         onDelete?.(advice.id);
     };
 
+    const formatPrice = (price?: string | null) => {
+        if (!price) return null;
+        if (price.includes('Руб') || price.includes('руб') || price.includes('₽') || price.includes('$') || price.includes('€')) {
+            return price;
+        }
+        return `${price} ₽`;
+    };
+
+    const displayPrice = formatPrice(advice.price);
+
     return (
         <div
             className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full flex flex-col"
@@ -61,7 +71,7 @@ const AdviceShortComponent: React.FC<AdviceShortComponentProps> = ({
         >
             {/* Изображение с фиксированной высотой и центрированием */}
             {images.length > 0 && (
-                <div className="mb-3 relative  rounded-lg overflow-hidden h-64 flex items-center justify-center">
+                <div className="mb-3 relative rounded-lg overflow-hidden h-64 flex items-center justify-center">
                     <img
                         src={imageApi.getImageUrl(images[0].id)}
                         alt={advice.title}
@@ -92,6 +102,13 @@ const AdviceShortComponent: React.FC<AdviceShortComponentProps> = ({
                             </span>
                         )}
 
+                        {displayPrice && (
+                            <span className="inline-flex items-center bg-green-50 text-green-700 text-xs px-2 py-1 rounded font-medium flex-shrink-0">
+                                <span className="mr-1">💰</span>
+                                {displayPrice}
+                            </span>
+                        )}
+
                         {advice.adAdvice && (
                             <span className="inline-flex items-center bg-orange-50 text-orange-700 text-xs px-2 py-1 rounded font-medium flex-shrink-0">
                                 <span className="mr-1">💼</span>
@@ -102,7 +119,7 @@ const AdviceShortComponent: React.FC<AdviceShortComponentProps> = ({
                 </div>
 
                 {/* Футер */}
-                <div className="flex justify-between items-center pt-2  border-gray-100 mt-auto">
+                <div className="flex justify-between items-center pt-2 border-gray-100 mt-auto">
                     <div className="flex items-center space-x-1 text-xs text-gray-500 flex-shrink-0">
                         {showUser && (
                             <span className="truncate max-w-[80px]">ID: {advice.userId.slice(0, 6)}...</span>
