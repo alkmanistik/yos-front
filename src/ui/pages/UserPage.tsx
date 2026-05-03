@@ -32,11 +32,9 @@ const UserPage = () => {
     const [loadingCounts, setLoadingCounts] = useState(false);
     const [showSubscriptionsModal, setShowSubscriptionsModal] = useState(false);
     const [showFollowersModal, setShowFollowersModal] = useState(false);
-
     const [profileUser, setProfileUser] = useState<UserResponse | null>(null);
 
     const displayUser = isOwnProfile ? currentUser : profileUser;
-
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -49,7 +47,7 @@ const UserPage = () => {
         return () => {
             subscriptionEvents.removeEventListener('subscriptionsUpdated', handleSubscriptionsUpdate);
         };
-    }, []);
+    }, [displayUser?.id]); // Добавил зависимость
 
     useEffect(() => {
         const loadUserData = async () => {
@@ -79,7 +77,7 @@ const UserPage = () => {
     useEffect(() => {
         const searchParams = new URLSearchParams(location.search);
         const tab = searchParams.get('tab') as TabType;
-        if (tab && ['advices', 'wishes'].includes(tab)) {
+        if (tab && ['advices', 'wishes', 'fulfilledWishes'].includes(tab)) {
             setActiveTab(tab);
         }
     }, [location.search]);
@@ -139,8 +137,14 @@ const UserPage = () => {
         );
     }
 
+    const tabs = [
+        { id: 'advices' as TabType, label: '📝 Советы', color: 'blue' },
+        { id: 'wishes' as TabType, label: '🎁 Желания', color: 'purple' },
+        { id: 'fulfilledWishes' as TabType, label: '✅ Исполненные', color: 'green' },
+    ];
+
     return (
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
             {/* Профиль пользователя */}
             <UserProfile
                 user={displayUser}
@@ -149,57 +153,50 @@ const UserPage = () => {
                 loadingCounts={loadingCounts}
                 onShowSubscriptions={() => setShowSubscriptionsModal(true)}
                 onShowFollowers={() => setShowFollowersModal(true)}
-                onUpdateCounts={loadCounts}
+                onUpdateCounts={() => loadCounts()}
             />
 
-            {/* Вкладки */}
-            <div className="mt-8">
-                <div className="border-b border-gray-200">
+            {/* Адаптивные вкладки */}
+            <div className="mt-6 sm:mt-8">
+                {/* Десктопные табы */}
+                <div className="hidden sm:block border-b border-gray-200">
                     <nav className="-mb-px flex space-x-8">
-                        <button
-                            onClick={() => setActiveTab('advices')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                                activeTab === 'advices'
-                                    ? 'border-blue-500 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
-                        >
-                            📝 Советы
-                            <span className="ml-2 bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full">
-            {loadingCounts ? '...' : counts.advices}
-        </span>
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('wishes')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                                activeTab === 'wishes'
-                                    ? 'border-purple-500 text-purple-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
-                        >
-                            🎁 Желания
-                            <span className="ml-2 bg-purple-100 text-purple-600 text-xs px-2 py-1 rounded-full">
-            {loadingCounts ? '...' : counts.wishes}
-                            </span>
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('fulfilledWishes')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                                activeTab === 'fulfilledWishes'
-                                    ? 'border-green-500 text-green-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
-                        >
-                            ✅ Исполненные
-                            <span className="ml-2 bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full">
-            {loadingCounts ? '...' : counts.wishFulfilled || 0}
-                            </span>
-                        </button>
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                                    activeTab === tab.id
+                                        ? `border-${tab.color}-500 text-${tab.color}-600`
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                            >
+                                {tab.label}
+                                <span className={`ml-2 bg-${tab.color}-100 text-${tab.color}-600 text-xs px-2 py-1 rounded-full`}>
+                                    {loadingCounts ? '...' : (tab.id === 'advices' ? counts.advices : tab.id === 'wishes' ? counts.wishes : counts.wishFulfilled || 0)}
+                                </span>
+                            </button>
+                        ))}
                     </nav>
                 </div>
 
+                {/* Мобильные табы - селект */}
+                <div className="sm:hidden">
+                    <select
+                        value={activeTab}
+                        onChange={(e) => setActiveTab(e.target.value as TabType)}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-base font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        {tabs.map((tab) => (
+                            <option key={tab.id} value={tab.id}>
+                                {tab.label} ({tab.id === 'advices' ? counts.advices : tab.id === 'wishes' ? counts.wishes : counts.wishFulfilled || 0})
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
                 {/* Контент вкладок */}
-                <div className="py-6">
+                <div className="py-4 sm:py-6">
                     {activeTab === 'advices' && (
                         <AdviceList
                             userId={displayUser.id}

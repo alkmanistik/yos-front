@@ -6,6 +6,8 @@ import {imageApi} from "../../api/imageApi.ts";
 import type {ImageShortResponse} from "../../types/image.ts";
 import {wishApi} from "../../api/wishApi.ts";
 import {useAuth} from "../../contexts/AuthContext.tsx";
+import {useToast} from "../../hooks/useToast.tsx";
+import {useConfirmDialog} from "../../hooks/useConfirmDialog.tsx";
 
 interface WishComponentProps {
     wish: WishResponse;
@@ -26,6 +28,8 @@ const WishComponent: React.FC<WishComponentProps> = ({
                                                          onReserveStatusChange
                                                      }) => {
     const { user } = useAuth();
+    const { showToast, ToastContainer } = useToast();
+    const { confirm, ConfirmDialogContainer } = useConfirmDialog();
     const [images, setImages] = useState<ImageShortResponse[]>([]);
     const [, setLoadingImages] = useState(true);
     const [wish, setWish] = useState<WishResponse>(initialWish);
@@ -39,34 +43,21 @@ const WishComponent: React.FC<WishComponentProps> = ({
         reservedAt?: string;
     } | null>(null);
 
-    // Функция для обновления статуса желания
     const updateWishStatus = async () => {
         try {
-            // Получаем актуальный статус желания
             const status = await wishApi.getWishStatus(wish.id);
 
-            // Обновляем статус fulfilled
             if (status.status === "FULFILLED" && !wish.fulfilled) {
                 setWish(prev => ({ ...prev, fulfilled: true, fulfilledAt: new Date().toISOString() }));
             } else if (status.status !== "FULFILLED" && wish.fulfilled) {
                 setWish(prev => ({ ...prev, fulfilled: false, fulfilledAt: undefined }));
             }
 
-            // Проверяем статус бронирования
             if (user && !isOwn && status.status !== "FULFILLED") {
                 try {
                     const reserveStatus = await wishApi.getReserveStatus(wish.id);
                     const isMyReserve = reserveStatus.status === "MY";
                     setIsReservedByMe(isMyReserve);
-
-                    // Если есть информация о бронировании, получаем детали
-                    if (reserveStatus.status === "MY" || reserveStatus.status === "OTHER") {
-                        // Здесь нужно получить детали бронирования, если есть API
-                        // const details = await wishApi.getReserveDetails(wish.id);
-                        // setReserveInfo(details);
-                    } else {
-                        setReserveInfo(null);
-                    }
                 } catch (error) {
                     console.error('Error checking reserve status:', error);
                     setIsReservedByMe(false);
@@ -102,39 +93,54 @@ const WishComponent: React.FC<WishComponentProps> = ({
         onEdit?.(wish);
     };
 
-    const handleDelete = () => {
-        if (confirm('Вы уверены, что хотите удалить это желание?')) {
+    const handleDelete = async () => {
+        const confirmed = await confirm({
+            title: 'Удаление желания',
+            message: 'Вы уверены, что хотите удалить это желание? Это действие нельзя отменить.',
+            confirmText: 'Удалить',
+            cancelText: 'Отмена',
+            type: 'danger'
+        });
+
+        if (confirmed) {
             onDelete?.(wish.id);
+            showToast('Желание успешно удалено! 🗑️', 'success');
         }
     };
 
     const handleMarkFulfilled = async () => {
-        if (confirm('Отметить желание как исполненное?')) {
+        const confirmed = await confirm({
+            title: 'Исполнение желания',
+            message: 'Отметить желание как исполненное?',
+            confirmText: 'Да, исполнить',
+            cancelText: 'Отмена',
+            type: 'success'
+        });
+
+        if (confirmed) {
             onMarkFulfilled?.(wish.id);
-            // Обновляем статус после отметки
             await updateWishStatus();
+            showToast('Желание отмечено как исполненное! 🎉', 'success');
         }
     };
 
     const handleReserve = async () => {
         if (!user) {
-            alert('Необходимо авторизоваться для бронирования');
+            showToast('Необходимо авторизоваться для бронирования', 'warning');
             return;
         }
 
         setIsLoadingReserve(true);
         try {
             await wishApi.reserveWish(wish.id, { message: reserveMessage || null });
-
-            // Обновляем статусы после успешного бронирования
             await updateWishStatus();
-
             setShowReserveModal(false);
             setReserveMessage("");
             onReserveStatusChange?.();
+            showToast('Желание успешно забронировано! 🎉', 'success');
         } catch (error) {
             console.error('Error reserving wish:', error);
-            alert('Не удалось забронировать желание. Возможно, оно уже зарезервировано.');
+            showToast('Не удалось забронировать желание. Возможно, оно уже зарезервировано.', 'error');
         } finally {
             setIsLoadingReserve(false);
         }
@@ -143,19 +149,25 @@ const WishComponent: React.FC<WishComponentProps> = ({
     const handleCancelReserve = async () => {
         if (!user) return;
 
-        if (!confirm('Вы уверены, что хотите отменить бронирование?')) return;
+        const confirmed = await confirm({
+            title: 'Отмена бронирования',
+            message: 'Вы уверены, что хотите отменить бронирование?',
+            confirmText: 'Отменить',
+            cancelText: 'Назад',
+            type: 'warning'
+        });
+
+        if (!confirmed) return;
 
         setIsLoadingReserve(true);
         try {
             await wishApi.cancelReserve(wish.id);
-
-            // Обновляем статусы после отмены бронирования
             await updateWishStatus();
-
             onReserveStatusChange?.();
+            showToast('Бронирование отменено', 'info');
         } catch (error) {
             console.error('Error cancelling reserve:', error);
-            alert('Не удалось отменить бронирование.');
+            showToast('Не удалось отменить бронирование', 'error');
         } finally {
             setIsLoadingReserve(false);
         }
@@ -175,21 +187,22 @@ const WishComponent: React.FC<WishComponentProps> = ({
 
     return (
         <>
-            <div className="bg-white border border-gray-200 rounded-lg p-6 max-w-2xl mx-auto">
+            <ToastContainer />
+            <ConfirmDialogContainer />
+            <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 max-w-2xl mx-auto">
                 {/* Изображение */}
                 {images.length > 0 && (
-                    <div className="mb-6">
+                    <div className="mb-4 sm:mb-6">
                         <div className="relative bg-gray-100 rounded-lg overflow-hidden aspect-square max-w-md mx-auto">
                             <img
                                 src={imageApi.getImageUrl(images[0].id)}
                                 alt={wish.title}
                                 className="w-full h-full object-cover"
                             />
-                            {/* Замок для забронированных желаний */}
                             {!isOwn && isReservedByMe === false && reserveInfo && (
                                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                    <div className="bg-black/70 backdrop-blur-md rounded-full p-3">
-                                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="bg-black/70 backdrop-blur-md rounded-full p-2 sm:p-3">
+                                        <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                         </svg>
                                     </div>
@@ -199,45 +212,113 @@ const WishComponent: React.FC<WishComponentProps> = ({
                     </div>
                 )}
 
-                <div className="flex justify-between items-start mb-4">
+                {/* Заголовок и кнопки в одной строке */}
+                <div className="flex justify-between items-start gap-4 mb-4">
                     <div className="flex-1">
-                        <h2 className="text-xl font-bold text-gray-900 mb-3">{wish.title}</h2>
+                        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">{wish.title}</h2>
 
                         {wish.description && (
-                            <p className="text-gray-700 mb-4 leading-relaxed whitespace-pre-line">
+                            <p className="text-gray-700 mb-4 leading-relaxed whitespace-pre-line text-sm sm:text-base">
                                 {wish.description}
                             </p>
                         )}
                     </div>
+
+                    {/* Кнопки действий - справа от заголовка */}
+                    <div className="flex gap-1 flex-shrink-0">
+                        {canReserve && (
+                            <button
+                                onClick={() => setShowReserveModal(true)}
+                                className="text-purple-600 hover:text-purple-800 p-1.5 rounded-lg transition-colors"
+                                title="Забронировать"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </button>
+                        )}
+
+                        {isReservedByMe && (
+                            <button
+                                onClick={handleCancelReserve}
+                                disabled={isLoadingReserve}
+                                className="text-red-600 hover:text-red-800 p-1.5 rounded-lg transition-colors disabled:opacity-50"
+                                title="Отменить бронь"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        )}
+
+                        {isOwn && !isFulfilled && onMarkFulfilled && (
+                            <button
+                                onClick={handleMarkFulfilled}
+                                className="text-green-600 hover:text-green-800 p-1.5 rounded-lg transition-colors"
+                                title="Отметить исполненным"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                            </button>
+                        )}
+
+                        {onEdit && (isOwn || !isReservedByMe) && (
+                            <button
+                                onClick={handleEdit}
+                                className="text-blue-600 hover:text-blue-800 p-1.5 rounded-lg transition-colors"
+                                title="Редактировать"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </button>
+                        )}
+
+                        {onDelete && isOwn && (
+                            <button
+                                onClick={handleDelete}
+                                className="text-red-600 hover:text-red-800 p-1.5 rounded-lg transition-colors"
+                                title="Удалить"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        )}
+                    </div>
                 </div>
 
+                {/* Теги */}
                 <div className="flex flex-wrap gap-2 mb-4">
                     {displayPrice && (
-                        <span className="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full font-medium">
+                        <span className="bg-green-100 text-green-800 text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full font-medium">
                             💰 {displayPrice}
                         </span>
                     )}
 
                     {isFulfilled && (
-                        <span className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium">
-                            ✅ Исполнено
+                        <span className="inline-flex items-center bg-gradient-to-r from-green-400 to-emerald-500 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full font-medium shadow-sm">
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Исполнено
                         </span>
                     )}
 
                     {isReservedByMe && (
-                        <span className="bg-purple-100 text-purple-800 text-sm px-3 py-1 rounded-full font-medium">
+                        <span className="bg-purple-100 text-purple-800 text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full font-medium">
                             🔑 Вы забронировали
                         </span>
                     )}
 
                     {!isOwn && !isReservedByMe && reserveInfo && (
-                        <span className="bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full font-medium">
+                        <span className="bg-yellow-100 text-yellow-800 text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full font-medium">
                             🔒 Забронировано
                         </span>
                     )}
                 </div>
 
-                {/* Информация о бронировании */}
                 {reserveInfo && reserveInfo.giverName && (
                     <div className="mb-4 p-3 bg-purple-50 rounded-lg">
                         <p className="text-sm text-purple-800">
@@ -269,76 +350,8 @@ const WishComponent: React.FC<WishComponentProps> = ({
                     </div>
                 )}
 
-                {/* Кнопки действий */}
-                <div className="flex justify-end space-x-2 mb-4 pt-4 border-t border-gray-100">
-                    {/* Кнопка бронирования для чужих желаний */}
-                    {canReserve && (
-                        <button
-                            onClick={() => setShowReserveModal(true)}
-                            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center space-x-1"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                            <span>Забронировать</span>
-                        </button>
-                    )}
-
-                    {/* Кнопка отмены бронирования */}
-                    {isReservedByMe && (
-                        <button
-                            onClick={handleCancelReserve}
-                            disabled={isLoadingReserve}
-                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center space-x-1 disabled:opacity-50"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            <span>{isLoadingReserve ? '...' : 'Отменить бронь'}</span>
-                        </button>
-                    )}
-
-                    {/* Кнопка отметки исполнения для своих желаний */}
-                    {isOwn && !isFulfilled && onMarkFulfilled && (
-                        <button
-                            onClick={handleMarkFulfilled}
-                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center space-x-1"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            <span>Исполнено</span>
-                        </button>
-                    )}
-
-                    {/* Кнопка редактирования */}
-                    {onEdit && (isOwn || !isReservedByMe) && (
-                        <button
-                            onClick={handleEdit}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center space-x-1"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            <span>Изменить</span>
-                        </button>
-                    )}
-
-                    {/* Кнопка удаления */}
-                    {onDelete && isOwn && (
-                        <button
-                            onClick={handleDelete}
-                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition-colors flex items-center space-x-1"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            <span>Удалить</span>
-                        </button>
-                    )}
-                </div>
-
-                <div className="flex justify-between items-center text-sm text-gray-500 border-t border-gray-100 pt-4">
+                {/* Футер */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-sm text-gray-500 border-t border-gray-100 pt-4">
                     <Link
                         to={`/user/${wish.userId}`}
                         className="hover:text-purple-600 flex items-center font-medium"
@@ -346,7 +359,7 @@ const WishComponent: React.FC<WishComponentProps> = ({
                         👤 Профиль автора
                     </Link>
 
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                         <div>Создан: {new Date(wish.createdAt).toLocaleDateString('ru-RU')}</div>
                         {wish.fulfilledAt && (
                             <div>Исполнено: {new Date(wish.fulfilledAt).toLocaleDateString('ru-RU')}</div>
@@ -358,18 +371,18 @@ const WishComponent: React.FC<WishComponentProps> = ({
             {/* Модальное окно для комментария */}
             {showReserveModal && (
                 <div
-                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
                     onClick={() => setShowReserveModal(false)}
                 >
                     <div
-                        className="bg-white rounded-2xl p-6 max-w-md w-full mx-4"
+                        className="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <h3 className="text-xl font-bold text-gray-900 mb-4">
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
                             Бронирование желания
                         </h3>
 
-                        <p className="text-gray-600 mb-4">
+                        <p className="text-sm sm:text-base text-gray-600 mb-4">
                             Вы собираетесь забронировать желание: <br/>
                             <span className="font-medium text-gray-900">"{wish.title}"</span>
                         </p>
@@ -381,17 +394,17 @@ const WishComponent: React.FC<WishComponentProps> = ({
                             <textarea
                                 value={reserveMessage}
                                 onChange={(e) => setReserveMessage(e.target.value)}
-                                className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                                 rows={4}
                                 placeholder="Напишите сообщение для автора желания..."
                             />
                         </div>
 
-                        <div className="flex gap-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
                             <button
                                 onClick={handleReserve}
                                 disabled={isLoadingReserve}
-                                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 rounded-xl transition-colors disabled:opacity-50"
+                                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2.5 sm:py-2 rounded-xl transition-colors disabled:opacity-50"
                             >
                                 {isLoadingReserve ? 'Бронирование...' : 'Подтвердить'}
                             </button>
@@ -400,7 +413,7 @@ const WishComponent: React.FC<WishComponentProps> = ({
                                     setShowReserveModal(false);
                                     setReserveMessage("");
                                 }}
-                                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 rounded-xl transition-colors"
+                                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2.5 sm:py-2 rounded-xl transition-colors"
                             >
                                 Отмена
                             </button>

@@ -192,7 +192,7 @@ const WishList: React.FC<WishListProps> = ({
             <div className="flex justify-between items-center">
                 <div>
                     <h3 className="text-lg font-semibold text-gray-900">
-                        Желания {pagination.total > 0 && `(${pagination.total})`}
+                        Желания
                     </h3>
                     {query && (
                         <p className="text-sm text-gray-500 mt-1">
