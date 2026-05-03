@@ -12,6 +12,7 @@ import AdviceDetailPage from "./ui/pages/AdviceDetailsPage.tsx";
 import WishCreatePage from "./ui/pages/WishCreatePage.tsx";
 import WishDetailPage from "./ui/pages/WishDetailPage.tsx";
 import AdminPage from "./ui/pages/AdminPage.tsx";
+import HelpPage from "./ui/pages/HelpPage.tsx";
 
 export const App = () => {
     return (
@@ -22,6 +23,7 @@ export const App = () => {
             </Route>
             <Route path="/" element={<LayoutPage/>}>
                 <Route path="/admin" element={<AdminPage/>}/>
+                <Route path="/help" element={<HelpPage/>}/>
                 <Route index element={<HomePage/>}/>
                 <Route path="advice">
                     <Route index element={<AdvicePage/>}/>
