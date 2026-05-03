@@ -16,7 +16,7 @@ export interface WishUpdateRequest {
 
 export interface WishReserveRequest {
     message?: string | null;
-    reserveEndDate?: number;
+    reserveEndDate?: number | null;
 }
 
 export interface WishAdminResponse {

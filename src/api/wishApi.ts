@@ -79,7 +79,7 @@ export const wishApi = {
     },
 
     async deleteWish(id: string): Promise<void> {
-        await api.delete(`/wish/${id}/`);
+        await api.delete(`/wish/${id}`);
     },
 
     async reserveWish(id: string, reserveData: WishReserveRequest): Promise<void> {

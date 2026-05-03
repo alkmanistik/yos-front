@@ -4,26 +4,57 @@ import {useEffect, useState} from "react";
 import {imageApi} from "../../api/imageApi.ts";
 import type {ImageShortResponse} from "../../types/image.ts";
 import {wishApi} from "../../api/wishApi.ts";
+import {useAuth} from "../../contexts/AuthContext.tsx";
 
 interface WishShortComponentProps {
     wish: WishShortResponse;
-    showUser?: boolean;
     onClick?: (wishId: string) => void;
     onEdit?: (wish: WishResponse) => void;
     onDelete?: (wishId: string) => void;
-    isOwn?: boolean;
+    onReserveStatusChange?: () => void;
 }
 
 const WishShortComponent: React.FC<WishShortComponentProps> = ({
                                                                    wish,
-                                                                   showUser = false,
                                                                    onClick,
                                                                    onEdit,
                                                                    onDelete,
-                                                                   isOwn = false
+                                                                   onReserveStatusChange
                                                                }) => {
+    const { user } = useAuth();
     const [images, setImages] = useState<ImageShortResponse[]>([]);
     const [, setLoadingImages] = useState(true);
+    const [isReservedByMe, setIsReservedByMe] = useState(false);
+    const [isLoadingReserve, setIsLoadingReserve] = useState(false);
+    const [showReserveModal, setShowReserveModal] = useState(false);
+    const [reserveMessage, setReserveMessage] = useState("");
+    const [wishStatus, setWishStatus] = useState<string>("");
+
+    // Определяем, является ли желание своим
+    const isOwn = user?.id === wish.userId;
+
+    // Функция для обновления статуса желания
+    const updateWishStatus = async () => {
+        try {
+            const status = await wishApi.getWishStatus(wish.id);
+            setWishStatus(status.status);
+
+            // Обновляем статус бронирования пользователя
+            if (user && !isOwn && status.status !== "FULFILLED") {
+                try {
+                    const reserveStatus = await wishApi.getReserveStatus(wish.id);
+                    setIsReservedByMe(reserveStatus.status === "MY");
+                } catch (error) {
+                    console.error('Error checking reserve status:', error);
+                    setIsReservedByMe(false);
+                }
+            } else {
+                setIsReservedByMe(false);
+            }
+        } catch (error) {
+            console.error('Error checking status:', error);
+        }
+    };
 
     useEffect(() => {
         const loadImages = async () => {
@@ -39,7 +70,8 @@ const WishShortComponent: React.FC<WishShortComponentProps> = ({
         };
 
         loadImages();
-    }, [wish.id]);
+        updateWishStatus();
+    }, [wish.id, user, isOwn]);
 
     const handleClick = () => {
         onClick?.(wish.id);
@@ -53,90 +85,256 @@ const WishShortComponent: React.FC<WishShortComponentProps> = ({
 
     const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
-        onDelete?.(wish.id);
+        if (confirm('Вы уверены, что хотите удалить это желание?')) {
+            onDelete?.(wish.id);
+        }
     };
 
+    const handleReserve = async () => {
+        if (!user) {
+            alert('Необходимо авторизоваться для бронирования');
+            return;
+        }
+
+        setIsLoadingReserve(true);
+        try {
+            await wishApi.reserveWish(wish.id, { message: reserveMessage || null });
+
+            // Обновляем статусы после успешного бронирования
+            await updateWishStatus();
+
+            setShowReserveModal(false);
+            setReserveMessage("");
+            onReserveStatusChange?.();
+        } catch (error) {
+            console.error('Error reserving wish:', error);
+            alert('Не удалось забронировать желание. Возможно, оно уже зарезервировано.');
+        } finally {
+            setIsLoadingReserve(false);
+        }
+    };
+
+    const handleCancelReserve = async () => {
+        if (!user) return;
+
+        if (!confirm('Вы уверены, что хотите отменить бронирование?')) return;
+
+        setIsLoadingReserve(true);
+        try {
+            await wishApi.cancelReserve(wish.id);
+
+            // Обновляем статусы после отмены бронирования
+            await updateWishStatus();
+
+            onReserveStatusChange?.();
+        } catch (error) {
+            console.error('Error cancelling reserve:', error);
+            alert('Не удалось отменить бронирование.');
+        } finally {
+            setIsLoadingReserve(false);
+        }
+    };
+
+    const formatPrice = (price?: string | null) => {
+        if (!price) return null;
+        if (price.includes('Руб') || price.includes('руб') || price.includes('₽') || price.includes('$') || price.includes('€')) {
+            return price;
+        }
+        return `${price} ₽`;
+    };
+
+    const displayPrice = formatPrice(wish.price);
+    const isFulfilled = wishStatus === "FULFILLED";
+    const isReserved = wishStatus === "RESERVED";
+    // Можно бронировать только если: пользователь авторизован, желание не своё, не исполнено, и не забронировано тобой
+    const canReserve = !!user && !isOwn && !isFulfilled && !isReservedByMe && !isReserved;
+
+    // Флаг для отображения затемнения на изображении (бронь чужого желания)
+    const showReservedOverlay = isReserved && !isOwn;
+
     return (
-        <div
-            className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full flex flex-col"
-            onClick={handleClick}
-        >
-            {images.length > 0 && (
-                <div className="mb-3 relative bg-gray-100 rounded-lg overflow-hidden aspect-square">
-                    <img
-                        src={imageApi.getImageUrl(images[0].id)}
-                        alt={wish.title}
-                        className="w-full h-full object-cover"
-                    />
-                </div>
-            )}
+        <>
+            <div
+                className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full flex flex-col relative"
+                onClick={handleClick}
+            >
+                {/* Затемнение и замок ТОЛЬКО на изображении */}
+                {images.length > 0 && (
+                    <div className="mb-3 relative bg-gray-100 rounded-lg overflow-hidden aspect-square">
+                        <img
+                            src={imageApi.getImageUrl(images[0].id)}
+                            alt={wish.title}
+                            className={`w-full h-full object-cover transition-all duration-200 ${
+                                showReservedOverlay ? 'brightness-50' : ''
+                            }`}
+                        />
 
-            <div className="flex-1 flex flex-col min-h-0">
-                <div className="flex-1 min-h-0">
-                    <h3 className="font-semibold text-gray-900 text-base mb-2 line-clamp-2 group-hover:text-purple-600 transition-colors leading-tight break-words">
-                        {wish.title}
-                    </h3>
-
-                    <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                        {wish.price && (
-                            <span className="inline-flex items-center bg-green-50 text-green-700 text-xs px-2 py-1 rounded font-medium flex-shrink-0">
-                                <span className="mr-1">💰</span>
-                                {wish.price}
-                            </span>
+                        {/* Замок поверх затемненного изображения */}
+                        {showReservedOverlay && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="bg-black/70 backdrop-blur-md rounded-full p-3">
+                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                </div>
+                            </div>
                         )}
 
-                        {wish.fulfilled && (
-                            <span className="inline-flex items-center bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded font-medium flex-shrink-0">
-                                <span className="mr-1">✅</span>
-                                Исполнено
-                            </span>
+                        {images.length > 1 && (
+                            <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded">
+                                +{images.length - 1}
+                            </div>
                         )}
                     </div>
-                </div>
+                )}
 
-                <div className="flex justify-between items-center pt-2 border-gray-100 mt-auto">
-                    <div className="flex items-center space-x-1 text-xs text-gray-500 flex-shrink-0">
-                        {showUser && (
-                            <span className="truncate max-w-[80px]">ID: {wish.userId.slice(0, 6)}...</span>
-                        )}
+                <div className="flex-1 flex flex-col min-h-0">
+                    <div className="flex-1 min-h-0">
+                        <h3 className="font-semibold text-gray-900 text-base mb-2 line-clamp-2 group-hover:text-purple-600 transition-colors leading-tight break-words">
+                            {wish.title}
+                        </h3>
+
+                        <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                            {displayPrice && (
+                                <span className="inline-flex items-center bg-green-50 text-green-700 text-xs px-2 py-1 rounded font-medium">
+                                    <span className="mr-1">💰</span>
+                                    {displayPrice}
+                                </span>
+                            )}
+
+                            {isFulfilled && (
+                                <span className="inline-flex items-center bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded font-medium">
+                                    <span className="mr-1">✅</span>
+                                    Исполнено
+                                </span>
+                            )}
+
+                            {/* Тег "Забронировано" для статуса RESERVED */}
+                            {isReserved && !isOwn && !isReservedByMe && (
+                                <span className="inline-flex items-center bg-yellow-50 text-yellow-700 text-xs px-2 py-1 rounded font-medium">
+                                    <span className="mr-1">🔒</span>
+                                    Забронировано
+                                </span>
+                            )}
+
+                            {/* Тег "Вы забронировали" для своих броней */}
+                            {isReservedByMe && (
+                                <span className="inline-flex items-center bg-purple-50 text-purple-700 text-xs px-2 py-1 rounded font-medium">
+                                    <span className="mr-1">🔑</span>
+                                    Вы забронировали
+                                </span>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="flex items-center space-x-1 flex-shrink-0">
-                        {(onEdit || onDelete) && (
-                            <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {/* Кнопки по центру */}
+                    <div className="flex justify-center pt-2 border-gray-100 mt-auto">
+                        {/* Кнопка бронирования */}
+                        {canReserve && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowReserveModal(true);
+                                }}
+                                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors"
+                            >
+                                Забронировать
+                            </button>
+                        )}
+
+                        {/* Кнопка отмены бронирования (только если пользователь забронировал сам) */}
+                        {isReservedByMe && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCancelReserve();
+                                }}
+                                disabled={isLoadingReserve}
+                                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors disabled:opacity-50"
+                            >
+                                {isLoadingReserve ? '...' : 'Отменить бронь'}
+                            </button>
+                        )}
+
+                        {/* Кнопки редактирования/удаления для своих желаний */}
+                        {(onEdit || onDelete) && isOwn && (
+                            <div className="flex gap-2">
                                 {onEdit && (
                                     <button
                                         onClick={handleEdit}
-                                        className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors flex-shrink-0"
-                                        title="Редактировать"
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors"
                                     >
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
+                                        Редактировать
                                     </button>
                                 )}
                                 {onDelete && (
                                     <button
                                         onClick={handleDelete}
-                                        className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors flex-shrink-0"
-                                        title="Удалить"
+                                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors"
                                     >
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
+                                        Удалить
                                     </button>
                                 )}
                             </div>
                         )}
-                        {isOwn && (
-                            <span className="text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded whitespace-nowrap">
-                                Ваше
-                            </span>
-                        )}
                     </div>
                 </div>
             </div>
-        </div>
+
+            {/* Модальное окно для комментария */}
+            {showReserveModal && (
+                <div
+                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                    onClick={() => setShowReserveModal(false)}
+                >
+                    <div
+                        className="bg-white rounded-2xl p-6 max-w-md w-full mx-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h3 className="text-xl font-bold text-gray-900 mb-4">
+                            Бронирование желания
+                        </h3>
+
+                        <p className="text-gray-600 mb-4">
+                            Вы собираетесь забронировать желание: <br/>
+                            <span className="font-medium text-gray-900">"{wish.title}"</span>
+                        </p>
+
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Сообщение (опционально)
+                            </label>
+                            <textarea
+                                value={reserveMessage}
+                                onChange={(e) => setReserveMessage(e.target.value)}
+                                className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                rows={4}
+                                placeholder="Напишите сообщение для автора желания..."
+                            />
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleReserve}
+                                disabled={isLoadingReserve}
+                                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 rounded-xl transition-colors disabled:opacity-50"
+                            >
+                                {isLoadingReserve ? 'Бронирование...' : 'Подтвердить'}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowReserveModal(false);
+                                    setReserveMessage("");
+                                }}
+                                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 rounded-xl transition-colors"
+                            >
+                                Отмена
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 };
 
